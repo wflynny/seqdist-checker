@@ -25,6 +25,23 @@
     --sans: 'DM Sans', sans-serif;
   }
 
+  :root.light {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-2: #ecedf1;
+    --border: #d4d6de;
+    --text: #1c1e24;
+    --text-dim: #6b6f80;
+    --accent: #0e9981;
+    --accent-dim: rgba(14,153,129,0.10);
+    --warn: #b8860b;
+    --warn-dim: rgba(184,134,11,0.10);
+    --danger: #dc2626;
+    --danger-dim: rgba(220,38,38,0.08);
+    --ok: #0e9981;
+    --ok-dim: rgba(14,153,129,0.06);
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
@@ -100,6 +117,27 @@
   }
 
   textarea::placeholder { color: #4a4e5c; }
+  :root.light textarea::placeholder { color: #a0a4b0; }
+
+  /* Theme toggle */
+  .theme-toggle {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--text-dim);
+    transition: background 0.15s;
+  }
+  .theme-toggle:hover { background: var(--border); }
+
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
 
   .controls {
     display: flex;
@@ -271,6 +309,12 @@
   tbody tr:hover { background: rgba(93,228,199,0.03); }
   tbody tr.flagged { background: var(--danger-dim); }
   tbody tr.flagged:hover { background: rgba(248,113,113,0.15); }
+  :root.light tbody tr:hover { background: rgba(14,153,129,0.05); }
+  :root.light tbody tr.flagged:hover { background: rgba(220,38,38,0.12); }
+
+  :root.light .alert-banner.pass { border-color: rgba(14,153,129,0.3); }
+  :root.light .alert-banner.fail { border-color: rgba(220,38,38,0.3); }
+  :root.light .matrix-wrap td.self { color: #c0c2ca; }
 
   td {
     padding: 0.55rem 1rem;
@@ -408,8 +452,13 @@
 <body>
 <div class="container">
   <header>
-    <h1>▧ Sequence Distance Checker</h1>
-    <p>Paste nucleotide sequences with labels. Computes pairwise Levenshtein distances and flags pairs below your similarity threshold.</p>
+    <div class="header-row">
+      <div>
+        <h1>▧ Sequence Distance Checker</h1>
+        <p>Paste nucleotide sequences with labels. Computes pairwise Levenshtein distances and flags pairs below your similarity threshold.</p>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">☀</button>
+    </div>
   </header>
 
   <div class="input-section">
@@ -432,7 +481,7 @@
         </select>
       </div>
       <button class="run" onclick="analyze()">Compute Distances</button>
-      <button class="secondary" onclick="loadExample()">Load Example</button>
+
     </div>
   </div>
 
@@ -463,6 +512,14 @@
 </div>
 
 <script>
+// --- Theme ---
+function toggleTheme() {
+  const root = document.documentElement;
+  const btn = document.querySelector('.theme-toggle');
+  root.classList.toggle('light');
+  btn.textContent = root.classList.contains('light') ? '☾' : '☀';
+}
+
 // --- Levenshtein ---
 function levenshtein(a, b) {
   const m = a.length, n = b.length;
@@ -692,20 +749,6 @@ function esc(s) {
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
-}
-
-function loadExample() {
-  document.getElementById('seqInput').value =
-`BC001\tATCGATCGATCG
-BC002\tATCGATCGATCC
-BC003\tTTGGAACCTTGG
-BC004\tATCGTTCGATCG
-BC005\tGGCCAAGGCCAA
-BC006\tTTGGAACCTTGA
-BC007\tCCGGTTAACCGG
-BC008\tATCGATCGATCT`;
-  document.getElementById('threshold').value = 3;
-  analyze();
 }
 
 function exportCSV() {
