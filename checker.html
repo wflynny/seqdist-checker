@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sequence Distance Checker</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0e13;
+    --surface: #151820;
+    --surface-2: #1c2029;
+    --border: #2a2e3a;
+    --text: #e2e4e9;
+    --text-dim: #8b8fa3;
+    --accent: #5de4c7;
+    --accent-dim: rgba(93,228,199,0.12);
+    --warn: #fbbf24;
+    --warn-dim: rgba(251,191,36,0.12);
+    --danger: #f87171;
+    --danger-dim: rgba(248,113,113,0.12);
+    --ok: #5de4c7;
+    --ok-dim: rgba(93,228,199,0.08);
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  header {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+
+  header p {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    max-width: 600px;
+  }
+
+  .input-section {
+    display: grid;
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 220px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--text);
+    resize: vertical;
+    line-height: 1.7;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  textarea::placeholder { color: #4a4e5c; }
+
+  .controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .threshold-group {
+    flex: 0 0 auto;
+  }
+
+  .threshold-group input {
+    width: 80px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.55rem 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .threshold-group input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .format-group {
+    flex: 0 0 auto;
+  }
+
+  .format-group select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.55rem 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .format-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  button.run {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    padding: 0.55rem 1.5rem;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.01em;
+  }
+
+  button.run:hover { opacity: 0.88; }
+  button.run:active { transform: scale(0.97); }
+
+  button.secondary {
+    background: var(--surface-2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.55rem 1.1rem;
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  button.secondary:hover { background: var(--border); color: var(--text); }
+
+  /* Alert banner */
+  .alert-banner {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.88rem;
+    display: none;
+    align-items: flex-start;
+    gap: 0.75rem;
+    line-height: 1.5;
+    animation: fadeSlide 0.3s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .alert-banner.pass {
+    display: flex;
+    background: var(--ok-dim);
+    border: 1px solid rgba(93,228,199,0.25);
+    color: var(--ok);
+  }
+
+  .alert-banner.fail {
+    display: flex;
+    background: var(--danger-dim);
+    border: 1px solid rgba(248,113,113,0.25);
+    color: var(--danger);
+  }
+
+  .alert-banner .icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 0.05rem; }
+
+  .alert-details {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    margin-top: 0.5rem;
+    opacity: 0.9;
+  }
+
+  /* Results table */
+  .results-section { display: none; animation: fadeSlide 0.35s ease; }
+
+  .results-section h2 {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text);
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  thead th {
+    background: var(--surface-2);
+    padding: 0.65rem 1rem;
+    text-align: left;
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    position: relative;
+  }
+
+  thead th:hover { color: var(--text); }
+  thead th .sort-arrow { margin-left: 0.3rem; font-size: 0.7rem; }
+
+  tbody tr { transition: background 0.1s; }
+  tbody tr:hover { background: rgba(93,228,199,0.03); }
+  tbody tr.flagged { background: var(--danger-dim); }
+  tbody tr.flagged:hover { background: rgba(248,113,113,0.15); }
+
+  td {
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  td:last-child { text-align: right; }
+  td .seq { color: var(--text-dim); font-size: 0.78rem; }
+
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: var(--mono);
+    letter-spacing: 0.03em;
+  }
+
+  .badge.ok { background: var(--ok-dim); color: var(--ok); }
+  .badge.warn { background: var(--warn-dim); color: var(--warn); }
+  .badge.danger { background: var(--danger-dim); color: var(--danger); }
+
+  /* Full matrix */
+  .matrix-section { display: none; animation: fadeSlide 0.35s ease; }
+
+  .matrix-section h2 {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text);
+  }
+
+  .matrix-wrap {
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    max-height: 500px;
+  }
+
+  .matrix-wrap table { font-size: 0.75rem; }
+
+  .matrix-wrap th {
+    background: var(--surface-2);
+    padding: 0.4rem 0.6rem;
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  .matrix-wrap th.row-header {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    text-align: right;
+  }
+
+  .matrix-wrap th.corner {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 4;
+  }
+
+  .matrix-wrap td {
+    padding: 0.35rem 0.6rem;
+    text-align: center;
+    border: 1px solid var(--border);
+    font-size: 0.78rem;
+    font-family: var(--mono);
+  }
+
+  .matrix-wrap td.self { color: #3a3e4c; }
+  .matrix-wrap td.hot { background: var(--danger-dim); color: var(--danger); font-weight: 600; }
+
+  /* Export area */
+  .export-bar {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .stats-bar {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1.1rem;
+    min-width: 130px;
+  }
+
+  .stat .val {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .stat .lbl {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0.15rem;
+  }
+
+  .stat.danger .val { color: var(--danger); }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: #4a4e5c;
+    font-family: var(--mono);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>▧ Sequence Distance Checker</h1>
+    <p>Paste nucleotide sequences with labels. Computes pairwise Levenshtein distances and flags pairs below your similarity threshold.</p>
+  </header>
+
+  <div class="input-section">
+    <div>
+      <label for="seqInput">Sequences (one per line)</label>
+      <textarea id="seqInput" placeholder="Paste sequences — one per line, label and sequence separated by tab, comma, or space.&#10;&#10;Example:&#10;BC001  ATCGATCG&#10;BC002  ATCGATCC&#10;BC003  TTGGAACC&#10;BC004  ATCGTTCG"></textarea>
+    </div>
+    <div class="controls">
+      <div class="threshold-group">
+        <label for="threshold">Min distance threshold</label>
+        <input type="number" id="threshold" value="3" min="1" max="50">
+      </div>
+      <div class="format-group">
+        <label for="delimiter">Delimiter</label>
+        <select id="delimiter">
+          <option value="auto">Auto-detect</option>
+          <option value="tab">Tab</option>
+          <option value="comma">Comma</option>
+          <option value="space">Space</option>
+        </select>
+      </div>
+      <button class="run" onclick="analyze()">Compute Distances</button>
+      <button class="secondary" onclick="loadExample()">Load Example</button>
+    </div>
+  </div>
+
+  <div id="alertBanner" class="alert-banner"></div>
+
+  <div id="statsBar" class="stats-bar"></div>
+
+  <div id="resultsSection" class="results-section">
+    <h2>Minimum Distance per Sequence</h2>
+    <div class="table-wrap">
+      <table id="resultsTable">
+        <thead id="resultsHead"></thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="matrixSection" class="matrix-section">
+    <h2>Full Pairwise Distance Matrix</h2>
+    <div class="matrix-wrap" id="matrixWrap"></div>
+    <div class="export-bar">
+      <button class="secondary" onclick="exportCSV()">Export Summary CSV</button>
+      <button class="secondary" onclick="exportMatrixCSV()">Export Full Matrix CSV</button>
+    </div>
+  </div>
+
+  <footer>Levenshtein distances computed client-side. No data leaves your browser.</footer>
+</div>
+
+<script>
+// --- Levenshtein ---
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  let prev = Array.from({length: n + 1}, (_, i) => i);
+  let curr = new Array(n + 1);
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i-1] === b[j-1] ? 0 : 1;
+      curr[j] = Math.min(prev[j] + 1, curr[j-1] + 1, prev[j-1] + cost);
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[n];
+}
+
+// --- Parsing ---
+function parseInput(raw, delim) {
+  const lines = raw.trim().split('\n').filter(l => l.trim());
+  const barcodes = [];
+  for (const line of lines) {
+    let parts;
+    if (delim === 'auto') {
+      if (line.includes('\t')) parts = line.split('\t');
+      else if (line.includes(',')) parts = line.split(',');
+      else parts = line.trim().split(/\s+/);
+    } else if (delim === 'tab') parts = line.split('\t');
+    else if (delim === 'comma') parts = line.split(',');
+    else parts = line.trim().split(/\s+/);
+
+    parts = parts.map(p => p.trim()).filter(Boolean);
+    if (parts.length === 1) {
+      barcodes.push({ label: `Seq${barcodes.length+1}`, seq: parts[0].toUpperCase() });
+    } else if (parts.length >= 2) {
+      // last token that looks like a nucleotide sequence
+      const seqIdx = parts.length - 1;
+      const label = parts.slice(0, seqIdx).join(' ');
+      barcodes.push({ label, seq: parts[seqIdx].toUpperCase() });
+    }
+  }
+  return barcodes;
+}
+
+let lastResults = null;
+let lastMatrix = null;
+let lastBarcodes = null;
+let currentSort = { col: null, asc: true };
+
+function analyze() {
+  const raw = document.getElementById('seqInput').value;
+  const thresh = parseInt(document.getElementById('threshold').value) || 3;
+  const delim = document.getElementById('delimiter').value;
+
+  const barcodes = parseInput(raw, delim);
+  if (barcodes.length < 2) {
+    showAlert('fail', 'Need at least 2 sequences to compare.', '');
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('matrixSection').style.display = 'none';
+    document.getElementById('statsBar').innerHTML = '';
+    return;
+  }
+
+  const n = barcodes.length;
+  const matrix = Array.from({length: n}, () => new Array(n).fill(0));
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const d = levenshtein(barcodes[i].seq, barcodes[j].seq);
+      matrix[i][j] = d;
+      matrix[j][i] = d;
+    }
+  }
+
+  // Build results: min distance per barcode
+  const results = barcodes.map((bc, i) => {
+    let minDist = Infinity, nearest = '';
+    for (let j = 0; j < n; j++) {
+      if (i === j) continue;
+      if (matrix[i][j] < minDist) {
+        minDist = matrix[i][j];
+        nearest = barcodes[j].label;
+      }
+    }
+    return { label: bc.label, seq: bc.seq, minDist, nearest, flagged: minDist < thresh };
+  });
+
+  // Flagged pairs
+  const flaggedPairs = [];
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      if (matrix[i][j] < thresh) {
+        flaggedPairs.push({ a: barcodes[i].label, b: barcodes[j].label, dist: matrix[i][j] });
+      }
+    }
+  }
+
+  lastResults = results;
+  lastMatrix = matrix;
+  lastBarcodes = barcodes;
+  currentSort = { col: null, asc: true };
+
+  // Alert
+  if (flaggedPairs.length === 0) {
+    showAlert('pass', `All pairs have distance ≥ ${thresh}. No conflicts detected.`, '');
+  } else {
+    const details = flaggedPairs.map(p => `${p.a} ↔ ${p.b}: ${p.dist}`).join('  ·  ');
+    showAlert('fail',
+      `${flaggedPairs.length} pair${flaggedPairs.length > 1 ? 's' : ''} below threshold (< ${thresh})`,
+      details
+    );
+  }
+
+  // Stats
+  const allDists = [];
+  for (let i = 0; i < n; i++) for (let j = i+1; j < n; j++) allDists.push(matrix[i][j]);
+  const minAll = Math.min(...allDists);
+  const maxAll = Math.max(...allDists);
+  const meanAll = (allDists.reduce((a,b) => a+b, 0) / allDists.length).toFixed(1);
+
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat"><div class="val">${n}</div><div class="lbl">Sequences</div></div>
+    <div class="stat ${minAll < thresh ? 'danger' : ''}"><div class="val">${minAll}</div><div class="lbl">Global min dist</div></div>
+    <div class="stat"><div class="val">${maxAll}</div><div class="lbl">Global max dist</div></div>
+    <div class="stat"><div class="val">${meanAll}</div><div class="lbl">Mean distance</div></div>
+    <div class="stat ${flaggedPairs.length > 0 ? 'danger' : ''}"><div class="val">${flaggedPairs.length}</div><div class="lbl">Flagged pairs</div></div>
+  `;
+
+  renderTable(results, thresh);
+  renderMatrix(barcodes, matrix, thresh);
+}
+
+function renderTable(results, thresh) {
+  const section = document.getElementById('resultsSection');
+  section.style.display = 'block';
+
+  const head = document.getElementById('resultsHead');
+  head.innerHTML = `<tr>
+    <th onclick="sortTable(0)">Label <span class="sort-arrow"></span></th>
+    <th onclick="sortTable(1)">Sequence <span class="sort-arrow"></span></th>
+    <th onclick="sortTable(2)">Length <span class="sort-arrow"></span></th>
+    <th onclick="sortTable(3)">Min Dist <span class="sort-arrow"></span></th>
+    <th onclick="sortTable(4)">Nearest <span class="sort-arrow"></span></th>
+    <th onclick="sortTable(5)">Status <span class="sort-arrow"></span></th>
+  </tr>`;
+
+  fillTableBody(results, thresh);
+}
+
+function fillTableBody(results, thresh) {
+  const body = document.getElementById('resultsBody');
+  body.innerHTML = results.map(r => {
+    const badgeClass = r.minDist < thresh ? 'danger' : r.minDist < thresh + 2 ? 'warn' : 'ok';
+    const badgeText = r.minDist < thresh ? 'FAIL' : r.minDist < thresh + 2 ? 'CLOSE' : 'OK';
+    return `<tr class="${r.flagged ? 'flagged' : ''}">
+      <td>${esc(r.label)}</td>
+      <td><span class="seq">${esc(r.seq)}</span></td>
+      <td>${r.seq.length}</td>
+      <td>${r.minDist}</td>
+      <td>${esc(r.nearest)}</td>
+      <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function sortTable(colIdx) {
+  if (!lastResults) return;
+  const thresh = parseInt(document.getElementById('threshold').value) || 3;
+  const keys = ['label', 'seq', 'seqLen', 'minDist', 'nearest', 'status'];
+  if (currentSort.col === colIdx) {
+    currentSort.asc = !currentSort.asc;
+  } else {
+    currentSort.col = colIdx;
+    currentSort.asc = true;
+  }
+  const sorted = [...lastResults].sort((a, b) => {
+    let va, vb;
+    switch(colIdx) {
+      case 0: va = a.label; vb = b.label; break;
+      case 1: va = a.seq; vb = b.seq; break;
+      case 2: va = a.seq.length; vb = b.seq.length; break;
+      case 3: va = a.minDist; vb = b.minDist; break;
+      case 4: va = a.nearest; vb = b.nearest; break;
+      case 5: va = a.flagged ? 0 : 1; vb = b.flagged ? 0 : 1; break;
+    }
+    if (typeof va === 'string') return currentSort.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return currentSort.asc ? va - vb : vb - va;
+  });
+  fillTableBody(sorted, thresh);
+}
+
+function renderMatrix(barcodes, matrix, thresh) {
+  const section = document.getElementById('matrixSection');
+  section.style.display = 'block';
+  const wrap = document.getElementById('matrixWrap');
+
+  const n = barcodes.length;
+  let html = '<table><thead><tr><th class="corner"></th>';
+  for (const bc of barcodes) html += `<th>${esc(bc.label)}</th>`;
+  html += '</tr></thead><tbody>';
+
+  for (let i = 0; i < n; i++) {
+    html += `<tr><th class="row-header">${esc(barcodes[i].label)}</th>`;
+    for (let j = 0; j < n; j++) {
+      if (i === j) {
+        html += '<td class="self">—</td>';
+      } else {
+        const cls = matrix[i][j] < thresh ? 'hot' : '';
+        html += `<td class="${cls}">${matrix[i][j]}</td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function showAlert(type, msg, details) {
+  const el = document.getElementById('alertBanner');
+  el.className = 'alert-banner ' + type;
+  const icon = type === 'pass' ? '✓' : '⚠';
+  el.innerHTML = `<span class="icon">${icon}</span><div><div>${msg}</div>${details ? '<div class="alert-details">' + esc(details) + '</div>' : ''}</div>`;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function loadExample() {
+  document.getElementById('seqInput').value =
+`BC001\tATCGATCGATCG
+BC002\tATCGATCGATCC
+BC003\tTTGGAACCTTGG
+BC004\tATCGTTCGATCG
+BC005\tGGCCAAGGCCAA
+BC006\tTTGGAACCTTGA
+BC007\tCCGGTTAACCGG
+BC008\tATCGATCGATCT`;
+  document.getElementById('threshold').value = 3;
+  analyze();
+}
+
+function exportCSV() {
+  if (!lastResults) return;
+  const rows = [['Label','Sequence','Length','MinDist','Nearest','Flagged']];
+  for (const r of lastResults) {
+    rows.push([r.label, r.seq, r.seq.length, r.minDist, r.nearest, r.flagged ? 'YES' : '']);
+  }
+  downloadCSV(rows, 'sequence_distances.csv');
+}
+
+function exportMatrixCSV() {
+  if (!lastMatrix || !lastBarcodes) return;
+  const n = lastBarcodes.length;
+  const rows = [['', ...lastBarcodes.map(b => b.label)]];
+  for (let i = 0; i < n; i++) {
+    rows.push([lastBarcodes[i].label, ...lastMatrix[i].map(String)]);
+  }
+  downloadCSV(rows, 'sequence_matrix.csv');
+}
+
+function downloadCSV(rows, filename) {
+  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+</script>
+</body>
+</html>
