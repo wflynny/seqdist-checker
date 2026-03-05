@@ -327,6 +327,55 @@
   td:last-child { text-align: right; }
   td .seq { color: var(--text-dim); font-size: 0.78rem; }
 
+  /* Alignment view */
+  tr.align-row td {
+    padding: 0.6rem 1rem;
+    white-space: pre;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  tr.align-row:hover { background: var(--surface) !important; }
+
+  .align-block {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.8;
+    overflow-x: auto;
+  }
+
+  .align-block .align-label {
+    display: inline-block;
+    width: 9ch;
+    color: var(--text-dim);
+    text-align: right;
+    margin-right: 1ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: top;
+  }
+
+  .align-block .nt-match { color: var(--ok); }
+  .align-block .nt-mis { color: var(--danger); font-weight: 600; }
+  .align-block .nt-gap { color: var(--warn); }
+  .align-block .mid-match { color: var(--ok); }
+  .align-block .mid-mis { color: var(--danger); }
+  .align-block .mid-gap { color: var(--text-dim); }
+
+  .align-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    padding: 0.15rem 0.45rem;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .align-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .align-btn.open { color: var(--accent); border-color: var(--accent); }
+
   .badge {
     display: inline-block;
     padding: 0.15rem 0.5rem;
@@ -538,6 +587,32 @@ function levenshtein(a, b) {
   return prev[n];
 }
 
+// --- Needleman-Wunsch global alignment ---
+function nwAlign(a, b) {
+  const GAP = -2, MATCH = 1, MISMATCH = -1;
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i * GAP;
+  for (let j = 0; j <= n; j++) dp[0][j] = j * GAP;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const s = a[i-1] === b[j-1] ? MATCH : MISMATCH;
+      dp[i][j] = Math.max(dp[i-1][j-1] + s, dp[i-1][j] + GAP, dp[i][j-1] + GAP);
+    }
+  }
+  let ai = '', bi = '', i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && dp[i][j] === dp[i-1][j-1] + (a[i-1]===b[j-1]?MATCH:MISMATCH)) {
+      ai = a[i-1] + ai; bi = b[j-1] + bi; i--; j--;
+    } else if (i > 0 && dp[i][j] === dp[i-1][j] + GAP) {
+      ai = a[i-1] + ai; bi = '-' + bi; i--;
+    } else {
+      ai = '-' + ai; bi = b[j-1] + bi; j--;
+    }
+  }
+  return { alignA: ai, alignB: bi };
+}
+
 // --- Parsing ---
 function parseInput(raw, delim) {
   const lines = raw.trim().split('\n').filter(l => l.trim());
@@ -595,17 +670,18 @@ function analyze() {
     }
   }
 
-  // Build results: min distance per barcode
+  // Build results: min distance per sequence
   const results = barcodes.map((bc, i) => {
-    let minDist = Infinity, nearest = '';
+    let minDist = Infinity, nearest = '', nearestSeq = '';
     for (let j = 0; j < n; j++) {
       if (i === j) continue;
       if (matrix[i][j] < minDist) {
         minDist = matrix[i][j];
         nearest = barcodes[j].label;
+        nearestSeq = barcodes[j].seq;
       }
     }
-    return { label: bc.label, seq: bc.seq, minDist, nearest, flagged: minDist < thresh };
+    return { label: bc.label, seq: bc.seq, minDist, nearest, nearestSeq, flagged: minDist < thresh };
   });
 
   // Flagged pairs
@@ -672,18 +748,68 @@ function renderTable(results, thresh) {
 
 function fillTableBody(results, thresh) {
   const body = document.getElementById('resultsBody');
-  body.innerHTML = results.map(r => {
+  body.innerHTML = results.map((r, idx) => {
     const badgeClass = r.minDist < thresh ? 'danger' : r.minDist < thresh + 2 ? 'warn' : 'ok';
     const badgeText = r.minDist < thresh ? 'FAIL' : r.minDist < thresh + 2 ? 'CLOSE' : 'OK';
-    return `<tr class="${r.flagged ? 'flagged' : ''}">
+    return `<tr class="${r.flagged ? 'flagged' : ''}" id="row-${idx}">
       <td>${esc(r.label)}</td>
       <td><span class="seq">${esc(r.seq)}</span></td>
       <td>${r.seq.length}</td>
       <td>${r.minDist}</td>
-      <td>${esc(r.nearest)}</td>
+      <td>${esc(r.nearest)} <button class="align-btn" onclick="toggleAlign(${idx}, this)" title="Show alignment">▸</button></td>
       <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+    </tr>
+    <tr class="align-row" id="align-${idx}" style="display:none">
+      <td colspan="6"><div class="align-block" id="align-content-${idx}"></div></td>
     </tr>`;
   }).join('');
+}
+
+function toggleAlign(idx, btn) {
+  const row = document.getElementById('align-' + idx);
+  const content = document.getElementById('align-content-' + idx);
+  const visible = row.style.display !== 'none';
+  if (visible) {
+    row.style.display = 'none';
+    btn.textContent = '▸';
+    btn.classList.remove('open');
+    return;
+  }
+  // Look up the result by label from the DOM row
+  const label = btn.closest('tr').children[0].textContent;
+  const target = lastResults.find(x => x.label === label);
+  if (!target || !target.nearestSeq) return;
+  const { alignA, alignB } = nwAlign(target.seq, target.nearestSeq);
+  content.innerHTML = renderAlignment(target.label, target.nearest, alignA, alignB);
+  row.style.display = '';
+  btn.textContent = '▾';
+  btn.classList.add('open');
+}
+
+function renderAlignment(labelA, labelB, alignA, alignB) {
+  const shortA = labelA.length > 8 ? labelA.slice(0,7) + '…' : labelA;
+  const shortB = labelB.length > 8 ? labelB.slice(0,7) + '…' : labelB;
+
+  // Build colored sequences and midline
+  let seqAhtml = '', midHtml = '', seqBhtml = '';
+  for (let i = 0; i < alignA.length; i++) {
+    const a = alignA[i], b = alignB[i];
+    if (a === '-' || b === '-') {
+      seqAhtml += `<span class="nt-gap">${a}</span>`;
+      seqBhtml += `<span class="nt-gap">${b}</span>`;
+      midHtml += `<span class="mid-gap"> </span>`;
+    } else if (a === b) {
+      seqAhtml += `<span class="nt-match">${a}</span>`;
+      seqBhtml += `<span class="nt-match">${b}</span>`;
+      midHtml += `<span class="mid-match">|</span>`;
+    } else {
+      seqAhtml += `<span class="nt-mis">${a}</span>`;
+      seqBhtml += `<span class="nt-mis">${b}</span>`;
+      midHtml += `<span class="mid-mis">·</span>`;
+    }
+  }
+
+  return `<span class="align-label">${esc(shortA)}</span> ${seqAhtml}\n<span class="align-label"></span> ${midHtml}\n<span class="align-label">${esc(shortB)}</span> ${seqBhtml}`;
 }
 
 function sortTable(colIdx) {
