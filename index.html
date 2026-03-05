@@ -589,26 +589,53 @@ function levenshtein(a, b) {
 
 // --- Needleman-Wunsch global alignment ---
 function nwAlign(a, b) {
-  const GAP = -2, MATCH = 1, MISMATCH = -1;
+  const MATCH = 2, MISMATCH = -3, GAP_OPEN = -3, GAP_EXT = -1;
   const m = a.length, n = b.length;
-  const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
-  for (let i = 0; i <= m; i++) dp[i][0] = i * GAP;
-  for (let j = 0; j <= n; j++) dp[0][j] = j * GAP;
+  // Affine gap: M[i][j] = best ending in match/mismatch, X[i][j] = gap in b, Y[i][j] = gap in a
+  const NEG = -1e9;
+  const M = Array.from({length: m+1}, () => new Float64Array(n+1).fill(NEG));
+  const X = Array.from({length: m+1}, () => new Float64Array(n+1).fill(NEG));
+  const Y = Array.from({length: m+1}, () => new Float64Array(n+1).fill(NEG));
+  M[0][0] = 0;
+  for (let i = 1; i <= m; i++) { X[i][0] = GAP_OPEN + (i-1) * GAP_EXT; }
+  for (let j = 1; j <= n; j++) { Y[0][j] = GAP_OPEN + (j-1) * GAP_EXT; }
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
       const s = a[i-1] === b[j-1] ? MATCH : MISMATCH;
-      dp[i][j] = Math.max(dp[i-1][j-1] + s, dp[i-1][j] + GAP, dp[i][j-1] + GAP);
+      const prev = Math.max(M[i-1][j-1], X[i-1][j-1], Y[i-1][j-1]);
+      M[i][j] = prev + s;
+      X[i][j] = Math.max(M[i-1][j] + GAP_OPEN, X[i-1][j] + GAP_EXT, Y[i-1][j] + GAP_OPEN);
+      Y[i][j] = Math.max(M[i][j-1] + GAP_OPEN, X[i][j-1] + GAP_OPEN, Y[i][j-1] + GAP_EXT);
     }
   }
+  // Traceback
   let ai = '', bi = '', i = m, j = n;
+  let state = 'M';
+  const best = Math.max(M[m][n], X[m][n], Y[m][n]);
+  if (best === X[m][n]) state = 'X';
+  else if (best === Y[m][n]) state = 'Y';
   while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && dp[i][j] === dp[i-1][j-1] + (a[i-1]===b[j-1]?MATCH:MISMATCH)) {
-      ai = a[i-1] + ai; bi = b[j-1] + bi; i--; j--;
-    } else if (i > 0 && dp[i][j] === dp[i-1][j] + GAP) {
-      ai = a[i-1] + ai; bi = '-' + bi; i--;
-    } else {
-      ai = '-' + ai; bi = b[j-1] + bi; j--;
-    }
+    if (state === 'M' && i > 0 && j > 0) {
+      ai = a[i-1] + ai; bi = b[j-1] + bi;
+      const s = a[i-1] === b[j-1] ? MATCH : MISMATCH;
+      const prev = M[i][j] - s;
+      if (i-1 >= 0 && j-1 >= 0 && Math.abs(M[i-1][j-1] - prev) < 0.5) state = 'M';
+      else if (i-1 >= 0 && j-1 >= 0 && Math.abs(X[i-1][j-1] - prev) < 0.5) state = 'X';
+      else state = 'Y';
+      i--; j--;
+    } else if (state === 'X' && i > 0) {
+      ai = a[i-1] + ai; bi = '-' + bi;
+      if (Math.abs(X[i-1][j] + GAP_EXT - X[i][j]) < 0.5) state = 'X';
+      else if (Math.abs(M[i-1][j] + GAP_OPEN - X[i][j]) < 0.5) state = 'M';
+      else state = 'Y';
+      i--;
+    } else if (j > 0) {
+      ai = '-' + ai; bi = b[j-1] + bi;
+      if (Math.abs(Y[i][j-1] + GAP_EXT - Y[i][j]) < 0.5) state = 'Y';
+      else if (Math.abs(M[i][j-1] + GAP_OPEN - Y[i][j]) < 0.5) state = 'M';
+      else state = 'X';
+      j--;
+    } else break;
   }
   return { alignA: ai, alignB: bi };
 }
