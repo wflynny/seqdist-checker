@@ -179,7 +179,8 @@
         <textarea id="grpInput" placeholder="PanelA  BC001  ATCGATCGATCG&#10;PanelA  BC002  ATCGATCGATCC&#10;PanelB  BC003  TTGGAACCTTGG&#10;PanelB  BC004  GGCCAAGGCCAA"></textarea>
       </div>
       <div class="controls">
-        <div class="threshold-group"><label for="grpThreshold">Min distance threshold</label><input type="number" id="grpThreshold" value="3" min="1" max="50"></div>
+        <div class="threshold-group"><label for="grpThreshWithin">Within-group threshold</label><input type="number" id="grpThreshWithin" value="3" min="1" max="50"></div>
+        <div class="threshold-group"><label for="grpThreshBetween">Between-group threshold</label><input type="number" id="grpThreshBetween" value="3" min="1" max="50"></div>
         <div class="format-group"><label for="grpDelimiter">Delimiter</label><select id="grpDelimiter"><option value="auto">Auto-detect</option><option value="tab">Tab</option><option value="comma">Comma</option></select></div>
         <button class="run" onclick="analyzeGrouped()">Compute Grouped Distances</button>
       </div>
@@ -313,7 +314,7 @@ function exportMatrixCSV(){if(!lastMatrix||!lastSeqs)return;const n=lastSeqs.len
 let grpDetail=null,interMat=null,gNames=null;
 
 function analyzeGrouped(){
-  const raw=document.getElementById('grpInput').value,thresh=parseInt(document.getElementById('grpThreshold').value)||3,delim=document.getElementById('grpDelimiter').value;
+  const raw=document.getElementById('grpInput').value,thW=parseInt(document.getElementById('grpThreshWithin').value)||3,thB=parseInt(document.getElementById('grpThreshBetween').value)||3,delim=document.getElementById('grpDelimiter').value;
   const errEl=document.getElementById('grpParseError');errEl.className='parse-error';errEl.textContent='';hideAlert('grpAlertBanner');
 
   const lines=raw.trim().split('\n').filter(l=>l.trim()),errors=[],seqs=[];
@@ -328,38 +329,43 @@ function analyzeGrouped(){
   for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const d=levenshtein(seqs[i].seq,seqs[j].seq);dist[i][j]=d;dist[j][i]=d;}
 
   // Intra
-  const intra=gN.map(gn=>{const idx=[];for(let i=0;i<n;i++)if(seqs[i].group===gn)idx.push(i);if(idx.length<2)return{group:gn,count:idx.length,minDist:null,meanDist:null,minPair:'',flagged:false};let md=Infinity,mp='',tot=0,cnt=0;for(let a=0;a<idx.length;a++)for(let b=a+1;b<idx.length;b++){const d=dist[idx[a]][idx[b]];tot+=d;cnt++;if(d<md){md=d;mp=seqs[idx[a]].label+' \u2194 '+seqs[idx[b]].label;}}return{group:gn,count:idx.length,minDist:md,meanDist:(tot/cnt).toFixed(1),minPair:mp,flagged:md<thresh};});
+  const intra=gN.map(gn=>{const idx=[];for(let i=0;i<n;i++)if(seqs[i].group===gn)idx.push(i);if(idx.length<2)return{group:gn,count:idx.length,minDist:null,meanDist:null,minPair:'',flagged:false};let md=Infinity,mp='',tot=0,cnt=0;for(let a=0;a<idx.length;a++)for(let b=a+1;b<idx.length;b++){const d=dist[idx[a]][idx[b]];tot+=d;cnt++;if(d<md){md=d;mp=seqs[idx[a]].label+' \u2194 '+seqs[idx[b]].label;}}return{group:gn,count:idx.length,minDist:md,meanDist:(tot/cnt).toFixed(1),minPair:mp,flagged:md<thW};});
 
   // Inter
   interMat=Array.from({length:nGrp},()=>new Array(nGrp).fill(null));
   for(let gi=0;gi<nGrp;gi++)for(let gj=gi+1;gj<nGrp;gj++){let md=Infinity;for(let i=0;i<n;i++){if(seqs[i].group!==gN[gi])continue;for(let j=0;j<n;j++){if(seqs[j].group!==gN[gj])continue;if(dist[i][j]<md)md=dist[i][j];}}interMat[gi][gj]=md;interMat[gj][gi]=md;}
 
   // Per-seq detail
-  grpDetail=seqs.map((s,i)=>{let iM=Infinity,iN='',xM=Infinity,xN='',xG='';for(let j=0;j<n;j++){if(i===j)continue;if(seqs[j].group===s.group){if(dist[i][j]<iM){iM=dist[i][j];iN=seqs[j].label;}}else{if(dist[i][j]<xM){xM=dist[i][j];xN=seqs[j].label;xG=seqs[j].group;}}}return{...s,iM:isFinite(iM)?iM:null,iN,xM:isFinite(xM)?xM:null,xN,xG,fI:isFinite(iM)&&iM<thresh,fX:isFinite(xM)&&xM<thresh};});
+  grpDetail=seqs.map((s,i)=>{let iM=Infinity,iN='',xM=Infinity,xN='',xG='';for(let j=0;j<n;j++){if(i===j)continue;if(seqs[j].group===s.group){if(dist[i][j]<iM){iM=dist[i][j];iN=seqs[j].label;}}else{if(dist[i][j]<xM){xM=dist[i][j];xN=seqs[j].label;xG=seqs[j].group;}}}return{...s,iM:isFinite(iM)?iM:null,iN,xM:isFinite(xM)?xM:null,xN,xG,fI:isFinite(iM)&&iM<thW,fX:isFinite(xM)&&xM<thB};});
 
   // Alerts
-  const iF=intra.filter(r=>r.flagged),xF=[];for(let gi=0;gi<nGrp;gi++)for(let gj=gi+1;gj<nGrp;gj++)if(interMat[gi][gj]<thresh)xF.push({a:gN[gi],b:gN[gj],d:interMat[gi][gj]});
+  const iF=intra.filter(r=>r.flagged),xF=[];for(let gi=0;gi<nGrp;gi++)for(let gj=gi+1;gj<nGrp;gj++)if(interMat[gi][gj]<thB)xF.push({a:gN[gi],b:gN[gj],d:interMat[gi][gj]});
   const tf=iF.length+xF.length;
-  if(!tf)showAlertOn('grpAlertBanner','pass','All intra- and inter-group distances \u2265 '+thresh+'.','');
-  else{const parts=[];if(iF.length)parts.push(iF.length+' group'+(iF.length>1?'s':'')+' with intra min < '+thresh);if(xF.length)parts.push(xF.length+' group pair'+(xF.length>1?'s':'')+' with inter min < '+thresh);showAlertOn('grpAlertBanner','fail',parts.join('; '),iF.map(r=>'[intra] '+r.group+': '+r.minDist).concat(xF.map(r=>'[inter] '+r.a+' \u2194 '+r.b+': '+r.d)).join('  \u00B7  '));}
+  if(!tf)showAlertOn('grpAlertBanner','pass','All within-group distances \u2265 '+thW+' and between-group distances \u2265 '+thB+'.','');
+  else{const parts=[];if(iF.length)parts.push(iF.length+' group'+(iF.length>1?'s':'')+' with within min < '+thW);if(xF.length)parts.push(xF.length+' group pair'+(xF.length>1?'s':'')+' with between min < '+thB);showAlertOn('grpAlertBanner','fail',parts.join('; '),iF.map(r=>'[within] '+r.group+': '+r.minDist).concat(xF.map(r=>'[between] '+r.a+' \u2194 '+r.b+': '+r.d)).join('  \u00B7  '));}
 
   document.getElementById('grpStatsBar').innerHTML='<div class="stat"><div class="val">'+n+'</div><div class="lbl">Sequences</div></div><div class="stat"><div class="val">'+nGrp+'</div><div class="lbl">Groups</div></div><div class="stat '+(tf?'danger':'')+'"><div class="val">'+tf+'</div><div class="lbl">Flags</div></div>';
 
   // Render intra
   document.getElementById('intraSection').className='group-section visible';
   document.getElementById('intraHead').innerHTML='<tr><th>Group</th><th>Count</th><th>Min Intra-Dist</th><th>Mean Dist</th><th>Closest Pair</th><th>Status</th></tr>';
-  document.getElementById('intraBody').innerHTML=intra.map((r,i)=>{const bc=r.minDist===null?'ok':r.minDist<thresh?'danger':r.minDist<thresh+2?'warn':'ok',bt=r.minDist===null?'N/A':r.minDist<thresh?'FAIL':r.minDist<thresh+2?'CLOSE':'OK';return '<tr class="'+(r.flagged?'flagged':'')+'"><td>'+chip(r.group,i)+'</td><td>'+r.count+'</td><td>'+(r.minDist!=null?r.minDist:'\u2014')+'</td><td>'+(r.meanDist||'\u2014')+'</td><td style="font-size:0.78rem">'+(esc(r.minPair)||'\u2014')+'</td><td><span class="badge '+bc+'">'+bt+'</span></td></tr>';}).join('');
+  document.getElementById('intraBody').innerHTML=intra.map((r,i)=>{const bc=r.minDist===null?'ok':r.minDist<thW?'danger':r.minDist<thW+2?'warn':'ok',bt=r.minDist===null?'N/A':r.minDist<thW?'FAIL':r.minDist<thW+2?'CLOSE':'OK';return '<tr class="'+(r.flagged?'flagged':'')+'"><td>'+chip(r.group,i)+'</td><td>'+r.count+'</td><td>'+(r.minDist!=null?r.minDist:'\u2014')+'</td><td>'+(r.meanDist||'\u2014')+'</td><td style="font-size:0.78rem">'+(esc(r.minPair)||'\u2014')+'</td><td><span class="badge '+bc+'">'+bt+'</span></td></tr>';}).join('');
 
   // Render inter matrix
   document.getElementById('interSection').className='group-section visible';
   let mh='<table><thead><tr><th class="corner">Min Dist</th>';for(let i=0;i<nGrp;i++)mh+='<th>'+chip(gN[i],i)+'</th>';mh+='</tr></thead><tbody>';
-  for(let i=0;i<nGrp;i++){mh+='<tr><th class="row-header">'+chip(gN[i],i)+'</th>';for(let j=0;j<nGrp;j++)mh+=i===j?'<td class="self">\u2014</td>':'<td class="'+(interMat[i][j]<thresh?'hot':'')+'">'+interMat[i][j]+'</td>';mh+='</tr>';}
+  for(let i=0;i<nGrp;i++){mh+='<tr><th class="row-header">'+chip(gN[i],i)+'</th>';for(let j=0;j<nGrp;j++)mh+=i===j?'<td class="self">\u2014</td>':'<td class="'+(interMat[i][j]<thB?'hot':'')+'">'+interMat[i][j]+'</td>';mh+='</tr>';}
   mh+='</tbody></table>';document.getElementById('interMatrixWrap').innerHTML=mh;
 
   // Render detail
   document.getElementById('grpDetailSection').className='group-section visible';
-  document.getElementById('grpDetailHead').innerHTML='<tr><th>Group</th><th>Label</th><th>Sequence</th><th>Intra Min</th><th>Intra Nearest</th><th>Inter Min</th><th>Inter Nearest</th></tr>';
-  document.getElementById('grpDetailBody').innerHTML=grpDetail.map(r=>{const gi=gN.indexOf(r.group),ib=r.iM!==null&&r.iM<thresh?' <span class="badge danger">FAIL</span>':'',xb=r.xM!==null&&r.xM<thresh?' <span class="badge danger">FAIL</span>':'';return '<tr class="'+(r.fI||r.fX?'flagged':'')+'"><td>'+chip(r.group,gi)+'</td><td>'+esc(r.label)+'</td><td><span class="seq">'+esc(r.seq)+'</span></td><td>'+(r.iM!=null?r.iM:'\u2014')+ib+'</td><td style="font-size:0.78rem">'+(esc(r.iN)||'\u2014')+'</td><td>'+(r.xM!=null?r.xM:'\u2014')+xb+'</td><td style="font-size:0.78rem">'+(r.xN?esc(r.xN)+' <span style="color:var(--text-dim)">('+esc(r.xG)+')</span>':'\u2014')+'</td></tr>';}).join('');
+  document.getElementById('grpDetailHead').innerHTML='<tr><th>Group</th><th>Label</th><th>Sequence</th><th>Within Min</th><th>Within Nearest</th><th>Within Status</th><th>Between Min</th><th>Between Nearest</th><th>Between Status</th></tr>';
+  document.getElementById('grpDetailBody').innerHTML=grpDetail.map(r=>{const gi=gN.indexOf(r.group);
+    const ibc=r.iM===null?'ok':r.iM<thW?'danger':r.iM<thW+2?'warn':'ok';
+    const ibt=r.iM===null?'SOLO':r.iM<thW?'FAIL':r.iM<thW+2?'CLOSE':'OK';
+    const xbc=r.xM===null?'ok':r.xM<thB?'danger':r.xM<thB+2?'warn':'ok';
+    const xbt=r.xM===null?'N/A':r.xM<thB?'FAIL':r.xM<thB+2?'CLOSE':'OK';
+    return '<tr class="'+(r.fI||r.fX?'flagged':'')+'"><td>'+chip(r.group,gi)+'</td><td>'+esc(r.label)+'</td><td><span class="seq">'+esc(r.seq)+'</span></td><td>'+(r.iM!=null?r.iM:'\u2014')+'</td><td style="font-size:0.78rem">'+(esc(r.iN)||'\u2014')+'</td><td><span class="badge '+ibc+'">'+ibt+'</span></td><td>'+(r.xM!=null?r.xM:'\u2014')+'</td><td style="font-size:0.78rem">'+(r.xN?esc(r.xN)+' <span style="color:var(--text-dim)">('+esc(r.xG)+')</span>':'\u2014')+'</td><td><span class="badge '+xbc+'">'+xbt+'</span></td></tr>';}).join('');
 }
 
 function exportGroupedCSV(){if(!grpDetail)return;const r=[['Group','Label','Sequence','IntraMinDist','IntraNearestLabel','InterMinDist','InterNearestLabel','InterNearestGroup']];for(const x of grpDetail)r.push([x.group,x.label,x.seq,x.iM!=null?x.iM:'',x.iN,x.xM!=null?x.xM:'',x.xN,x.xG]);downloadCSV(r,'grouped_sequence_distances.csv');}
