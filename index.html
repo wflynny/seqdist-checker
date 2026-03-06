@@ -113,7 +113,7 @@
   .export-bar { display:flex; gap:0.75rem; margin-top:1rem; flex-wrap:wrap; }
 
   .group-section { display:none; animation:fadeSlide 0.35s ease; }
-  .group-section.visible { display:block; }
+  .group-section.visible { display:block; margin-bottom:2.5rem; }
   .group-section .desc { font-size:0.82rem; color:var(--text-dim); margin-bottom:1rem; }
   .parse-error { background:var(--danger-dim); border:1px solid rgba(248,113,113,0.25); color:var(--danger); border-radius:8px; padding:0.75rem 1rem; font-size:0.82rem; margin-bottom:1rem; font-family:var(--mono); white-space:pre-line; display:none; }
   .parse-error.visible { display:block; }
@@ -297,6 +297,7 @@ function togA(idx,btn){
   for(let i=0;i<alignA.length;i++){const a=alignA[i],b=alignB[i];if(a==='-'||b==='-'){sa+='<span class="nt-gap">'+a+'</span>';sb+='<span class="nt-gap">'+b+'</span>';mid+='<span class="mid-gap"> </span>';}else if(a===b){sa+='<span class="nt-match">'+a+'</span>';sb+='<span class="nt-match">'+b+'</span>';mid+='<span class="mid-match">|</span>';}else{sa+='<span class="nt-mis">'+a+'</span>';sb+='<span class="nt-mis">'+b+'</span>';mid+='<span class="mid-mis">\u00B7</span>';}}
   ct.innerHTML='<span class="align-label">'+esc(sA)+'</span> '+sa+'\n<span class="align-label"></span> '+mid+'\n<span class="align-label">'+esc(sB)+'</span> '+sb;
   row.style.display='';btn.textContent='\u25BE';btn.classList.add('open');
+  requestAnimationFrame(()=>{const wrap=row.closest('.table-wrap');if(wrap)wrap.scrollLeft=0;row.scrollIntoView({behavior:'smooth',block:'nearest'});});
 }
 
 function sortT(col){
@@ -386,6 +387,7 @@ function togGrpA(idx,mode,btn){
   for(let i=0;i<alignA.length;i++){const a=alignA[i],b=alignB[i];if(a==='-'||b==='-'){sa+='<span class="nt-gap">'+a+'</span>';sb+='<span class="nt-gap">'+b+'</span>';mid+='<span class="mid-gap"> </span>';}else if(a===b){sa+='<span class="nt-match">'+a+'</span>';sb+='<span class="nt-match">'+b+'</span>';mid+='<span class="mid-match">|</span>';}else{sa+='<span class="nt-mis">'+a+'</span>';sb+='<span class="nt-mis">'+b+'</span>';mid+='<span class="mid-mis">\u00B7</span>';}}
   ct.innerHTML='<span class="align-label">'+esc(sA)+'</span> '+sa+'\n<span class="align-label"></span> '+mid+'\n<span class="align-label">'+esc(sB)+'</span> '+sb;
   row.style.display='';btn.textContent='\u25BE';btn.classList.add('open');
+  requestAnimationFrame(()=>{const wrap=row.closest('.table-wrap');if(wrap)wrap.scrollLeft=0;row.scrollIntoView({behavior:'smooth',block:'nearest'});});
 }
 
 function exportGroupedCSV(){if(!grpDetail)return;const r=[['Group','Label','Sequence','IntraMinDist','IntraNearestLabel','InterMinDist','InterNearestLabel','InterNearestGroup']];for(const x of grpDetail)r.push([x.group,x.label,x.seq,x.iM!=null?x.iM:'',x.iN,x.xM!=null?x.xM:'',x.xN,x.xG]);downloadCSV(r,'grouped_sequence_distances.csv');}
