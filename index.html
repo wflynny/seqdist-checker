@@ -151,6 +151,7 @@
       </div>
       <div class="controls">
         <div class="threshold-group"><label for="threshold">Min distance threshold</label><input type="number" id="threshold" value="3" min="1" max="50"></div>
+        <div class="format-group"><label for="metric">Distance metric</label><select id="metric"><option value="levenshtein">Levenshtein (edit)</option><option value="hamming">Hamming (substitution)</option></select></div>
         <div class="format-group"><label for="delimiter">Delimiter</label><select id="delimiter"><option value="auto">Auto-detect</option><option value="tab">Tab</option><option value="comma">Comma</option><option value="space">Space</option></select></div>
         <button class="run" onclick="analyze()">Compute Distances</button>
       </div>
@@ -181,6 +182,7 @@
       <div class="controls">
         <div class="threshold-group"><label for="grpThreshWithin">Within-group threshold</label><input type="number" id="grpThreshWithin" value="3" min="1" max="50"></div>
         <div class="threshold-group"><label for="grpThreshBetween">Between-group threshold</label><input type="number" id="grpThreshBetween" value="3" min="1" max="50"></div>
+        <div class="format-group"><label for="grpMetric">Distance metric</label><select id="grpMetric"><option value="levenshtein">Levenshtein (edit)</option><option value="hamming">Hamming (substitution)</option></select></div>
         <div class="format-group"><label for="grpDelimiter">Delimiter</label><select id="grpDelimiter"><option value="auto">Auto-detect</option><option value="tab">Tab</option><option value="comma">Comma</option></select></div>
         <button class="run" onclick="analyzeGrouped()">Compute Grouped Distances</button>
       </div>
@@ -220,6 +222,11 @@ function switchTab(id){document.querySelectorAll('.tab-btn').forEach(b=>b.classL
 
 function levenshtein(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,i)=>i),c=new Array(n+1);for(let i=1;i<=m;i++){c[0]=i;for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));[p,c]=[c,p];}return p[n];}
 
+function hamming(a,b){if(a.length!==b.length)return Infinity;let d=0;for(let i=0;i<a.length;i++)if(a[i]!==b[i])d++;return d;}
+
+function getDist(metric){return metric==='hamming'?hamming:levenshtein;}
+function fmtD(v){return v===Infinity?'\u221E':v;}
+
 function nwAlign(a,b){
   const MA=2,MI=-3,GO=-3,GE=-1,NEG=-1e9,m=a.length,n=b.length;
   const M=Array.from({length:m+1},()=>new Float64Array(n+1).fill(NEG));
@@ -236,6 +243,15 @@ function esc(s){const d=document.createElement('div');d.textContent=s;return d.i
 function showAlertOn(id,type,msg,det){const el=document.getElementById(id);el.className='alert-banner '+type;el.innerHTML=`<span class="icon">${type==='pass'?'\u2713':'\u26A0'}</span><div><div>${msg}</div>${det?'<div class="alert-details">'+esc(det)+'</div>':''}</div>`;}
 function hideAlert(id){document.getElementById(id).className='alert-banner';}
 function downloadCSV(rows,fn){const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=fn;a.click();}
+function hammingAlign(a,b){
+  const len=Math.max(a.length,b.length);
+  let ai='',bi='';
+  for(let i=0;i<len;i++){ai+=i<a.length?a[i]:'-';bi+=i<b.length?b[i]:'-';}
+  return{alignA:ai,alignB:bi};
+}
+
+function getAlign(metric){return metric==='hamming'?hammingAlign:nwAlign;}
+
 function splitLine(line,delim){if(delim==='auto'){if(line.includes('\t'))return line.split('\t');if(line.includes(','))return line.split(',');return line.trim().split(/\s+/);}if(delim==='tab')return line.split('\t');if(delim==='comma')return line.split(',');return line.trim().split(/\s+/);}
 
 const GC=['#5de4c7','#fbbf24','#f87171','#818cf8','#fb923c','#34d399','#f472b6','#60a5fa','#a78bfa','#facc15'];
@@ -245,13 +261,17 @@ function chip(name,i){const c=GC[i%GC.length];return `<span class="group-chip" s
 let lastResults=null,lastMatrix=null,lastSeqs=null,curSort={col:null,asc:true};
 
 function analyze(){
-  const raw=document.getElementById('seqInput').value,thresh=parseInt(document.getElementById('threshold').value)||3,delim=document.getElementById('delimiter').value;
+  const raw=document.getElementById('seqInput').value,thresh=parseInt(document.getElementById('threshold').value)||3,delim=document.getElementById('delimiter').value,metric=document.getElementById('metric').value;
+  const distFn=getDist(metric);
   const lines=raw.trim().split('\n').filter(l=>l.trim()),seqs=[];
   for(const line of lines){let p=splitLine(line,delim).map(s=>s.trim()).filter(Boolean);if(p.length===1)seqs.push({label:'Seq'+(seqs.length+1),seq:p[0].toUpperCase()});else if(p.length>=2)seqs.push({label:p.slice(0,-1).join(' '),seq:p[p.length-1].toUpperCase()});}
   if(seqs.length<2){showAlertOn('alertBanner','fail','Need at least 2 sequences.','');document.getElementById('resultsSection').style.display='none';document.getElementById('matrixSection').style.display='none';document.getElementById('statsBar').innerHTML='';return;}
 
+  // Warn if Hamming chosen but lengths vary
+  if(metric==='hamming'){const lens=new Set(seqs.map(s=>s.seq.length));if(lens.size>1){showAlertOn('alertBanner','fail','Hamming distance requires equal-length sequences. Found lengths: '+[...lens].sort((a,b)=>a-b).join(', ')+'. Pairs with mismatched lengths will show \u221E.','');}}
+
   const n=seqs.length,matrix=Array.from({length:n},()=>new Array(n).fill(0));
-  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const d=levenshtein(seqs[i].seq,seqs[j].seq);matrix[i][j]=d;matrix[j][i]=d;}
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const d=distFn(seqs[i].seq,seqs[j].seq);matrix[i][j]=d;matrix[j][i]=d;}
 
   const results=seqs.map((s,i)=>{let md=Infinity,nr='',ns='';for(let j=0;j<n;j++){if(i===j)continue;if(matrix[i][j]<md){md=matrix[i][j];nr=seqs[j].label;ns=seqs[j].seq;}}return{label:s.label,seq:s.seq,minDist:md,nearest:nr,nearestSeq:ns,flagged:md<thresh};});
   const fp=[];for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)if(matrix[i][j]<thresh)fp.push({a:seqs[i].label,b:seqs[j].label,d:matrix[i][j]});
@@ -261,12 +281,13 @@ function analyze(){
   if(!fp.length)showAlertOn('alertBanner','pass','All pairs \u2265 '+thresh+'. No conflicts.','');
   else showAlertOn('alertBanner','fail',fp.length+' pair'+(fp.length>1?'s':'')+' below threshold (< '+thresh+')',fp.map(p=>p.a+' \u2194 '+p.b+': '+p.d).join('  \u00B7  '));
 
-  const ad=[];for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)ad.push(matrix[i][j]);
+  const ad=[];for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)if(isFinite(matrix[i][j]))ad.push(matrix[i][j]);
+  const gMin=ad.length?Math.min(...ad):'\u221E',gMax=ad.length?Math.max(...ad):'\u221E',gMean=ad.length?(ad.reduce((a,b)=>a+b,0)/ad.length).toFixed(1):'\u2014';
   document.getElementById('statsBar').innerHTML=
     '<div class="stat"><div class="val">'+n+'</div><div class="lbl">Sequences</div></div>'+
-    '<div class="stat '+(Math.min(...ad)<thresh?'danger':'')+'"><div class="val">'+Math.min(...ad)+'</div><div class="lbl">Global min</div></div>'+
-    '<div class="stat"><div class="val">'+Math.max(...ad)+'</div><div class="lbl">Global max</div></div>'+
-    '<div class="stat"><div class="val">'+(ad.reduce((a,b)=>a+b,0)/ad.length).toFixed(1)+'</div><div class="lbl">Mean</div></div>'+
+    '<div class="stat '+(typeof gMin==='number'&&gMin<thresh?'danger':'')+'"><div class="val">'+gMin+'</div><div class="lbl">Global min</div></div>'+
+    '<div class="stat"><div class="val">'+gMax+'</div><div class="lbl">Global max</div></div>'+
+    '<div class="stat"><div class="val">'+gMean+'</div><div class="lbl">Mean</div></div>'+
     '<div class="stat '+(fp.length?'danger':'')+'"><div class="val">'+fp.length+'</div><div class="lbl">Flagged</div></div>';
 
   document.getElementById('resultsSection').style.display='block';
@@ -275,14 +296,15 @@ function analyze(){
 
   document.getElementById('matrixSection').style.display='block';
   let mh='<table><thead><tr><th class="corner"></th>';for(const s of seqs)mh+='<th>'+esc(s.label)+'</th>';mh+='</tr></thead><tbody>';
-  for(let i=0;i<n;i++){mh+='<tr><th class="row-header">'+esc(seqs[i].label)+'</th>';for(let j=0;j<n;j++)mh+=i===j?'<td class="self">\u2014</td>':'<td class="'+(matrix[i][j]<thresh?'hot':'')+'">'+matrix[i][j]+'</td>';mh+='</tr>';}
+  for(let i=0;i<n;i++){mh+='<tr><th class="row-header">'+esc(seqs[i].label)+'</th>';for(let j=0;j<n;j++)mh+=i===j?'<td class="self">\u2014</td>':'<td class="'+(isFinite(matrix[i][j])&&matrix[i][j]<thresh?'hot':'')+'">'+fmtD(matrix[i][j])+'</td>';mh+='</tr>';}
   mh+='</tbody></table>';document.getElementById('matrixWrap').innerHTML=mh;
 }
 
 function fillPW(results,thresh){
   document.getElementById('resultsBody').innerHTML=results.map((r,idx)=>{
-    const bc=r.minDist<thresh?'danger':r.minDist<thresh+2?'warn':'ok',bt=r.minDist<thresh?'FAIL':r.minDist<thresh+2?'CLOSE':'OK';
-    return '<tr class="'+(r.flagged?'flagged':'')+'" id="pw-r-'+idx+'"><td>'+esc(r.label)+'</td><td><span class="seq">'+esc(r.seq)+'</span></td><td>'+r.seq.length+'</td><td>'+r.minDist+'</td><td>'+esc(r.nearest)+' <button class="align-btn" onclick="togA('+idx+',this)">\u25B8</button></td><td><span class="badge '+bc+'">'+bt+'</span></td></tr><tr class="align-row" id="pw-a-'+idx+'" style="display:none"><td colspan="6"><div class="align-block" id="pw-ac-'+idx+'"></div></td></tr>';
+    const inf=!isFinite(r.minDist);
+    const bc=inf?'ok':r.minDist<thresh?'danger':r.minDist<thresh+2?'warn':'ok',bt=inf?'\u221E':r.minDist<thresh?'FAIL':r.minDist<thresh+2?'CLOSE':'OK';
+    return '<tr class="'+(r.flagged?'flagged':'')+'" id="pw-r-'+idx+'"><td>'+esc(r.label)+'</td><td><span class="seq">'+esc(r.seq)+'</span></td><td>'+r.seq.length+'</td><td>'+fmtD(r.minDist)+'</td><td>'+esc(r.nearest)+' <button class="align-btn" onclick="togA('+idx+',this)">\u25B8</button></td><td><span class="badge '+bc+'">'+bt+'</span></td></tr><tr class="align-row" id="pw-a-'+idx+'" style="display:none"><td colspan="6"><div class="align-block" id="pw-ac-'+idx+'"></div></td></tr>';
   }).join('');
 }
 
@@ -291,7 +313,7 @@ function togA(idx,btn){
   if(row.style.display!=='none'){row.style.display='none';btn.textContent='\u25B8';btn.classList.remove('open');return;}
   const label=btn.closest('tr').children[0].textContent,t=lastResults.find(x=>x.label===label);
   if(!t||!t.nearestSeq)return;
-  const{alignA,alignB}=nwAlign(t.seq,t.nearestSeq);
+  const{alignA,alignB}=getAlign(document.getElementById('metric').value)(t.seq,t.nearestSeq);
   const sA=t.label.length>8?t.label.slice(0,7)+'\u2026':t.label,sB=t.nearest.length>8?t.nearest.slice(0,7)+'\u2026':t.nearest;
   let sa='',mid='',sb='';
   for(let i=0;i<alignA.length;i++){const a=alignA[i],b=alignB[i];if(a==='-'||b==='-'){sa+='<span class="nt-gap">'+a+'</span>';sb+='<span class="nt-gap">'+b+'</span>';mid+='<span class="mid-gap"> </span>';}else if(a===b){sa+='<span class="nt-match">'+a+'</span>';sb+='<span class="nt-match">'+b+'</span>';mid+='<span class="mid-match">|</span>';}else{sa+='<span class="nt-mis">'+a+'</span>';sb+='<span class="nt-mis">'+b+'</span>';mid+='<span class="mid-mis">\u00B7</span>';}}
@@ -315,7 +337,8 @@ function exportMatrixCSV(){if(!lastMatrix||!lastSeqs)return;const n=lastSeqs.len
 let grpDetail=null,interMat=null,gNames=null;
 
 function analyzeGrouped(){
-  const raw=document.getElementById('grpInput').value,thW=parseInt(document.getElementById('grpThreshWithin').value)||3,thB=parseInt(document.getElementById('grpThreshBetween').value)||3,delim=document.getElementById('grpDelimiter').value;
+  const raw=document.getElementById('grpInput').value,thW=parseInt(document.getElementById('grpThreshWithin').value)||3,thB=parseInt(document.getElementById('grpThreshBetween').value)||3,delim=document.getElementById('grpDelimiter').value,metric=document.getElementById('grpMetric').value;
+  const distFn=getDist(metric);
   const errEl=document.getElementById('grpParseError');errEl.className='parse-error';errEl.textContent='';hideAlert('grpAlertBanner');
 
   const lines=raw.trim().split('\n').filter(l=>l.trim()),errors=[],seqs=[];
@@ -323,11 +346,14 @@ function analyzeGrouped(){
   if(errors.length){errEl.textContent=errors.join('\n');errEl.className='parse-error visible';}
   if(seqs.length<2){showAlertOn('grpAlertBanner','fail','Need at least 2 valid sequences.','');['intraSection','interSection','grpDetailSection'].forEach(id=>document.getElementById(id).className='group-section');document.getElementById('grpStatsBar').innerHTML='';return;}
 
+  // Warn if Hamming chosen but lengths vary
+  if(metric==='hamming'){const lens=new Set(seqs.map(s=>s.seq.length));if(lens.size>1){errEl.textContent='Hamming distance requires equal-length sequences. Found lengths: '+[...lens].sort((a,b)=>a-b).join(', ')+'. Pairs with mismatched lengths will show \u221E.';errEl.className='parse-error visible';}}
+
   const groups=new Map();for(const s of seqs){if(!groups.has(s.group))groups.set(s.group,[]);groups.get(s.group).push(s);}
   const gN=[...groups.keys()];gNames=gN;const nGrp=gN.length,n=seqs.length;
 
   const dist=Array.from({length:n},()=>new Array(n).fill(0));
-  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const d=levenshtein(seqs[i].seq,seqs[j].seq);dist[i][j]=d;dist[j][i]=d;}
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const d=distFn(seqs[i].seq,seqs[j].seq);dist[i][j]=d;dist[j][i]=d;}
 
   // Intra
   const intra=gN.map(gn=>{const idx=[];for(let i=0;i<n;i++)if(seqs[i].group===gn)idx.push(i);if(idx.length<2)return{group:gn,count:idx.length,minDist:null,meanDist:null,minPair:'',flagged:false};let md=Infinity,mp='',tot=0,cnt=0;for(let a=0;a<idx.length;a++)for(let b=a+1;b<idx.length;b++){const d=dist[idx[a]][idx[b]];tot+=d;cnt++;if(d<md){md=d;mp=seqs[idx[a]].label+' \u2194 '+seqs[idx[b]].label;}}return{group:gn,count:idx.length,minDist:md,meanDist:(tot/cnt).toFixed(1),minPair:mp,flagged:md<thW};});
@@ -381,7 +407,7 @@ function togGrpA(idx,mode,btn){
   const seqA=r.seq,seqB=mode==='w'?r.iNSeq:r.xNSeq;
   const labA=r.label,labB=mode==='w'?r.iN:(r.xN+' ('+r.xG+')');
   if(!seqB)return;
-  const{alignA,alignB}=nwAlign(seqA,seqB);
+  const{alignA,alignB}=getAlign(document.getElementById('grpMetric').value)(seqA,seqB);
   const sA=labA.length>8?labA.slice(0,7)+'\u2026':labA,sB=labB.length>8?labB.slice(0,7)+'\u2026':labB;
   let sa='',mid='',sb='';
   for(let i=0;i<alignA.length;i++){const a=alignA[i],b=alignB[i];if(a==='-'||b==='-'){sa+='<span class="nt-gap">'+a+'</span>';sb+='<span class="nt-gap">'+b+'</span>';mid+='<span class="mid-gap"> </span>';}else if(a===b){sa+='<span class="nt-match">'+a+'</span>';sb+='<span class="nt-match">'+b+'</span>';mid+='<span class="mid-match">|</span>';}else{sa+='<span class="nt-mis">'+a+'</span>';sb+='<span class="nt-mis">'+b+'</span>';mid+='<span class="mid-mis">\u00B7</span>';}}
