@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,495 +7,119 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0c0e13;
-    --surface: #151820;
-    --surface-2: #1c2029;
-    --border: #2a2e3a;
-    --text: #e2e4e9;
-    --text-dim: #8b8fa3;
-    --accent: #5de4c7;
-    --accent-dim: rgba(93,228,199,0.12);
-    --warn: #fbbf24;
-    --warn-dim: rgba(251,191,36,0.12);
-    --danger: #f87171;
-    --danger-dim: rgba(248,113,113,0.12);
-    --ok: #5de4c7;
-    --ok-dim: rgba(93,228,199,0.08);
-    --mono: 'IBM Plex Mono', monospace;
-    --sans: 'DM Sans', sans-serif;
+    --bg: #0c0e13; --surface: #151820; --surface-2: #1c2029; --border: #2a2e3a;
+    --text: #e2e4e9; --text-dim: #8b8fa3;
+    --accent: #5de4c7; --accent-dim: rgba(93,228,199,0.12);
+    --warn: #fbbf24; --warn-dim: rgba(251,191,36,0.12);
+    --danger: #f87171; --danger-dim: rgba(248,113,113,0.12);
+    --ok: #5de4c7; --ok-dim: rgba(93,228,199,0.08);
+    --mono: 'IBM Plex Mono', monospace; --sans: 'DM Sans', sans-serif;
   }
-
   :root.light {
-    --bg: #f5f6f8;
-    --surface: #ffffff;
-    --surface-2: #ecedf1;
-    --border: #d4d6de;
-    --text: #1c1e24;
-    --text-dim: #6b6f80;
-    --accent: #0e9981;
-    --accent-dim: rgba(14,153,129,0.10);
-    --warn: #b8860b;
-    --warn-dim: rgba(184,134,11,0.10);
-    --danger: #dc2626;
-    --danger-dim: rgba(220,38,38,0.08);
-    --ok: #0e9981;
-    --ok-dim: rgba(14,153,129,0.06);
+    --bg: #f5f6f8; --surface: #ffffff; --surface-2: #ecedf1; --border: #d4d6de;
+    --text: #1c1e24; --text-dim: #6b6f80;
+    --accent: #0e9981; --accent-dim: rgba(14,153,129,0.10);
+    --warn: #b8860b; --warn-dim: rgba(184,134,11,0.10);
+    --danger: #dc2626; --danger-dim: rgba(220,38,38,0.08);
+    --ok: #0e9981; --ok-dim: rgba(14,153,129,0.06);
   }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; line-height:1.6; }
+  .container { max-width:1020px; margin:0 auto; padding:2rem 1.5rem 4rem; }
+  header { margin-bottom:1.5rem; padding-bottom:1.5rem; border-bottom:1px solid var(--border); }
+  header h1 { font-family:var(--mono); font-size:1.4rem; font-weight:600; letter-spacing:-0.02em; color:var(--accent); margin-bottom:0.3rem; }
+  header p { font-size:0.88rem; color:var(--text-dim); max-width:620px; }
+  .header-row { display:flex; justify-content:space-between; align-items:flex-start; }
+  .theme-toggle { background:var(--surface-2); border:1px solid var(--border); border-radius:6px; padding:0.35rem 0.6rem; cursor:pointer; font-size:1rem; line-height:1; color:var(--text-dim); transition:background 0.15s; }
+  .theme-toggle:hover { background:var(--border); }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .tab-bar { display:flex; gap:0; margin-bottom:2rem; border-bottom:2px solid var(--border); }
+  .tab-btn { background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; padding:0.6rem 1.25rem; font-family:var(--sans); font-weight:600; font-size:0.88rem; color:var(--text-dim); cursor:pointer; transition:color 0.15s,border-color 0.15s; }
+  .tab-btn:hover { color:var(--text); }
+  .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .tab-panel { display:none; animation:fadeSlide 0.25s ease; }
+  .tab-panel.active { display:block; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    line-height: 1.6;
-  }
+  .input-section { display:grid; gap:1.25rem; margin-bottom:2rem; }
+  label { font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-dim); display:block; margin-bottom:0.4rem; }
+  textarea { width:100%; min-height:200px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:1rem; font-family:var(--mono); font-size:0.85rem; color:var(--text); resize:vertical; line-height:1.7; transition:border-color 0.2s; }
+  textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim); }
+  textarea::placeholder { color:#4a4e5c; }
+  :root.light textarea::placeholder { color:#a0a4b0; }
+  .controls { display:flex; align-items:flex-end; gap:1.25rem; flex-wrap:wrap; }
+  .threshold-group { flex:0 0 auto; }
+  .threshold-group input { width:80px; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:0.55rem 0.75rem; font-family:var(--mono); font-size:0.9rem; color:var(--text); text-align:center; }
+  .threshold-group input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim); }
+  .format-group { flex:0 0 auto; }
+  .format-group select { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:0.55rem 0.75rem; font-family:var(--mono); font-size:0.82rem; color:var(--text); cursor:pointer; }
+  .format-group select:focus { outline:none; border-color:var(--accent); }
+  button.run { background:var(--accent); color:var(--bg); border:none; border-radius:6px; padding:0.55rem 1.5rem; font-family:var(--sans); font-weight:600; font-size:0.88rem; cursor:pointer; transition:opacity 0.15s,transform 0.1s; }
+  button.run:hover { opacity:0.88; } button.run:active { transform:scale(0.97); }
+  button.secondary { background:var(--surface-2); color:var(--text-dim); border:1px solid var(--border); border-radius:6px; padding:0.55rem 1.1rem; font-family:var(--sans); font-weight:500; font-size:0.82rem; cursor:pointer; transition:background 0.15s; }
+  button.secondary:hover { background:var(--border); color:var(--text); }
 
-  .container {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem 4rem;
-  }
+  .alert-banner { border-radius:8px; padding:1rem 1.25rem; margin-bottom:1.5rem; font-size:0.88rem; display:none; align-items:flex-start; gap:0.75rem; line-height:1.5; animation:fadeSlide 0.3s ease; }
+  @keyframes fadeSlide { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+  .alert-banner.pass { display:flex; background:var(--ok-dim); border:1px solid rgba(93,228,199,0.25); color:var(--ok); }
+  .alert-banner.fail { display:flex; background:var(--danger-dim); border:1px solid rgba(248,113,113,0.25); color:var(--danger); }
+  :root.light .alert-banner.pass { border-color:rgba(14,153,129,0.3); }
+  :root.light .alert-banner.fail { border-color:rgba(220,38,38,0.3); }
+  .alert-banner .icon { font-size:1.2rem; flex-shrink:0; margin-top:0.05rem; }
+  .alert-details { font-family:var(--mono); font-size:0.78rem; margin-top:0.5rem; opacity:0.9; }
 
-  header {
-    margin-bottom: 2.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
+  .results-section,.matrix-section { display:none; animation:fadeSlide 0.35s ease; }
+  .section-title { font-family:var(--mono); font-size:0.95rem; font-weight:600; margin-bottom:0.75rem; color:var(--text); }
+  .table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:8px; margin-bottom:1.5rem; }
+  table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+  thead th { background:var(--surface-2); padding:0.65rem 1rem; text-align:left; font-family:var(--mono); font-weight:600; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-dim); border-bottom:1px solid var(--border); user-select:none; white-space:nowrap; }
+  thead th.sortable { cursor:pointer; } thead th.sortable:hover { color:var(--text); }
+  tbody tr { transition:background 0.1s; }
+  tbody tr:hover { background:rgba(93,228,199,0.03); }
+  :root.light tbody tr:hover { background:rgba(14,153,129,0.05); }
+  tbody tr.flagged { background:var(--danger-dim); }
+  tbody tr.flagged:hover { background:rgba(248,113,113,0.15); }
+  :root.light tbody tr.flagged:hover { background:rgba(220,38,38,0.12); }
+  td { padding:0.55rem 1rem; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:0.82rem; white-space:nowrap; }
+  td .seq { color:var(--text-dim); font-size:0.78rem; }
+  .badge { display:inline-block; padding:0.15rem 0.5rem; border-radius:4px; font-size:0.72rem; font-weight:600; font-family:var(--mono); }
+  .badge.ok { background:var(--ok-dim); color:var(--ok); }
+  .badge.warn { background:var(--warn-dim); color:var(--warn); }
+  .badge.danger { background:var(--danger-dim); color:var(--danger); }
 
-  header h1 {
-    font-family: var(--mono);
-    font-size: 1.4rem;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    color: var(--accent);
-    margin-bottom: 0.3rem;
-  }
+  tr.align-row td { padding:0.6rem 1rem; white-space:pre; background:var(--surface); border-bottom:1px solid var(--border); }
+  tr.align-row:hover { background:var(--surface) !important; }
+  .align-block { font-family:var(--mono); font-size:0.78rem; line-height:1.8; overflow-x:auto; }
+  .align-block .align-label { display:inline-block; width:9ch; color:var(--text-dim); text-align:right; margin-right:1ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:top; }
+  .nt-match { color:var(--ok); } .nt-mis { color:var(--danger); font-weight:600; } .nt-gap { color:var(--warn); }
+  .mid-match { color:var(--ok); } .mid-mis { color:var(--danger); } .mid-gap { color:var(--text-dim); }
+  .align-btn { background:none; border:1px solid var(--border); border-radius:4px; color:var(--text-dim); font-family:var(--mono); font-size:0.7rem; padding:0.15rem 0.45rem; cursor:pointer; transition:color 0.15s,border-color 0.15s; }
+  .align-btn:hover { color:var(--accent); border-color:var(--accent); }
+  .align-btn.open { color:var(--accent); border-color:var(--accent); }
 
-  header p {
-    font-size: 0.88rem;
-    color: var(--text-dim);
-    max-width: 600px;
-  }
+  .matrix-wrap { overflow:auto; border:1px solid var(--border); border-radius:8px; max-height:500px; }
+  .matrix-wrap table { font-size:0.75rem; }
+  .matrix-wrap th { background:var(--surface-2); padding:0.4rem 0.6rem; font-family:var(--mono); font-weight:500; font-size:0.7rem; color:var(--text-dim); border:1px solid var(--border); position:sticky; top:0; z-index:2; }
+  .matrix-wrap th.row-header { position:sticky; left:0; z-index:3; text-align:right; }
+  .matrix-wrap th.corner { position:sticky; top:0; left:0; z-index:4; }
+  .matrix-wrap td { padding:0.35rem 0.6rem; text-align:center; border:1px solid var(--border); font-size:0.78rem; font-family:var(--mono); }
+  .matrix-wrap td.self { color:#3a3e4c; } :root.light .matrix-wrap td.self { color:#c0c2ca; }
+  .matrix-wrap td.hot { background:var(--danger-dim); color:var(--danger); font-weight:600; }
 
-  .input-section {
-    display: grid;
-    gap: 1.25rem;
-    margin-bottom: 2rem;
-  }
+  .stats-bar { display:flex; gap:1.5rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+  .stat { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:0.75rem 1.1rem; min-width:120px; }
+  .stat .val { font-family:var(--mono); font-size:1.4rem; font-weight:600; color:var(--accent); }
+  .stat .lbl { font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em; margin-top:0.15rem; }
+  .stat.danger .val { color:var(--danger); }
+  .export-bar { display:flex; gap:0.75rem; margin-top:1rem; flex-wrap:wrap; }
 
-  label {
-    font-size: 0.78rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-dim);
-    display: block;
-    margin-bottom: 0.4rem;
-  }
+  .group-section { display:none; animation:fadeSlide 0.35s ease; }
+  .group-section.visible { display:block; }
+  .group-section .desc { font-size:0.82rem; color:var(--text-dim); margin-bottom:1rem; }
+  .parse-error { background:var(--danger-dim); border:1px solid rgba(248,113,113,0.25); color:var(--danger); border-radius:8px; padding:0.75rem 1rem; font-size:0.82rem; margin-bottom:1rem; font-family:var(--mono); white-space:pre-line; display:none; }
+  .parse-error.visible { display:block; }
+  .group-chip { display:inline-block; padding:0.1rem 0.45rem; border-radius:3px; font-size:0.75rem; font-family:var(--mono); font-weight:500; }
 
-  textarea {
-    width: 100%;
-    min-height: 220px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem;
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    color: var(--text);
-    resize: vertical;
-    line-height: 1.7;
-    transition: border-color 0.2s;
-  }
-
-  textarea:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-dim);
-  }
-
-  textarea::placeholder { color: #4a4e5c; }
-  :root.light textarea::placeholder { color: #a0a4b0; }
-
-  /* Theme toggle */
-  .theme-toggle {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.35rem 0.6rem;
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
-    color: var(--text-dim);
-    transition: background 0.15s;
-  }
-  .theme-toggle:hover { background: var(--border); }
-
-  .header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-
-  .controls {
-    display: flex;
-    align-items: flex-end;
-    gap: 1.25rem;
-    flex-wrap: wrap;
-  }
-
-  .threshold-group {
-    flex: 0 0 auto;
-  }
-
-  .threshold-group input {
-    width: 80px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.55rem 0.75rem;
-    font-family: var(--mono);
-    font-size: 0.9rem;
-    color: var(--text);
-    text-align: center;
-  }
-
-  .threshold-group input:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-dim);
-  }
-
-  .format-group {
-    flex: 0 0 auto;
-  }
-
-  .format-group select {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.55rem 0.75rem;
-    font-family: var(--mono);
-    font-size: 0.82rem;
-    color: var(--text);
-    cursor: pointer;
-  }
-
-  .format-group select:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  button.run {
-    background: var(--accent);
-    color: var(--bg);
-    border: none;
-    border-radius: 6px;
-    padding: 0.55rem 1.5rem;
-    font-family: var(--sans);
-    font-weight: 600;
-    font-size: 0.88rem;
-    cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s;
-    letter-spacing: 0.01em;
-  }
-
-  button.run:hover { opacity: 0.88; }
-  button.run:active { transform: scale(0.97); }
-
-  button.secondary {
-    background: var(--surface-2);
-    color: var(--text-dim);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.55rem 1.1rem;
-    font-family: var(--sans);
-    font-weight: 500;
-    font-size: 0.82rem;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  button.secondary:hover { background: var(--border); color: var(--text); }
-
-  /* Alert banner */
-  .alert-banner {
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-    margin-bottom: 1.5rem;
-    font-size: 0.88rem;
-    display: none;
-    align-items: flex-start;
-    gap: 0.75rem;
-    line-height: 1.5;
-    animation: fadeSlide 0.3s ease;
-  }
-
-  @keyframes fadeSlide {
-    from { opacity: 0; transform: translateY(-6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .alert-banner.pass {
-    display: flex;
-    background: var(--ok-dim);
-    border: 1px solid rgba(93,228,199,0.25);
-    color: var(--ok);
-  }
-
-  .alert-banner.fail {
-    display: flex;
-    background: var(--danger-dim);
-    border: 1px solid rgba(248,113,113,0.25);
-    color: var(--danger);
-  }
-
-  .alert-banner .icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 0.05rem; }
-
-  .alert-details {
-    font-family: var(--mono);
-    font-size: 0.78rem;
-    margin-top: 0.5rem;
-    opacity: 0.9;
-  }
-
-  /* Results table */
-  .results-section { display: none; animation: fadeSlide 0.35s ease; }
-
-  .results-section h2 {
-    font-family: var(--mono);
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: var(--text);
-  }
-
-  .table-wrap {
-    overflow-x: auto;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.82rem;
-  }
-
-  thead th {
-    background: var(--surface-2);
-    padding: 0.65rem 1rem;
-    text-align: left;
-    font-family: var(--mono);
-    font-weight: 600;
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-dim);
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
-    position: relative;
-  }
-
-  thead th:hover { color: var(--text); }
-  thead th .sort-arrow { margin-left: 0.3rem; font-size: 0.7rem; }
-
-  tbody tr { transition: background 0.1s; }
-  tbody tr:hover { background: rgba(93,228,199,0.03); }
-  tbody tr.flagged { background: var(--danger-dim); }
-  tbody tr.flagged:hover { background: rgba(248,113,113,0.15); }
-  :root.light tbody tr:hover { background: rgba(14,153,129,0.05); }
-  :root.light tbody tr.flagged:hover { background: rgba(220,38,38,0.12); }
-
-  :root.light .alert-banner.pass { border-color: rgba(14,153,129,0.3); }
-  :root.light .alert-banner.fail { border-color: rgba(220,38,38,0.3); }
-  :root.light .matrix-wrap td.self { color: #c0c2ca; }
-
-  td {
-    padding: 0.55rem 1rem;
-    border-bottom: 1px solid var(--border);
-    font-family: var(--mono);
-    font-size: 0.82rem;
-    white-space: nowrap;
-  }
-
-  td:last-child { text-align: right; }
-  td .seq { color: var(--text-dim); font-size: 0.78rem; }
-
-  /* Alignment view */
-  tr.align-row td {
-    padding: 0.6rem 1rem;
-    white-space: pre;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-  }
-  tr.align-row:hover { background: var(--surface) !important; }
-
-  .align-block {
-    font-family: var(--mono);
-    font-size: 0.78rem;
-    line-height: 1.8;
-    overflow-x: auto;
-  }
-
-  .align-block .align-label {
-    display: inline-block;
-    width: 9ch;
-    color: var(--text-dim);
-    text-align: right;
-    margin-right: 1ch;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: top;
-  }
-
-  .align-block .nt-match { color: var(--ok); }
-  .align-block .nt-mis { color: var(--danger); font-weight: 600; }
-  .align-block .nt-gap { color: var(--warn); }
-  .align-block .mid-match { color: var(--ok); }
-  .align-block .mid-mis { color: var(--danger); }
-  .align-block .mid-gap { color: var(--text-dim); }
-
-  .align-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text-dim);
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    padding: 0.15rem 0.45rem;
-    cursor: pointer;
-    transition: color 0.15s, border-color 0.15s;
-  }
-  .align-btn:hover { color: var(--accent); border-color: var(--accent); }
-  .align-btn.open { color: var(--accent); border-color: var(--accent); }
-
-  .badge {
-    display: inline-block;
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    font-family: var(--mono);
-    letter-spacing: 0.03em;
-  }
-
-  .badge.ok { background: var(--ok-dim); color: var(--ok); }
-  .badge.warn { background: var(--warn-dim); color: var(--warn); }
-  .badge.danger { background: var(--danger-dim); color: var(--danger); }
-
-  /* Full matrix */
-  .matrix-section { display: none; animation: fadeSlide 0.35s ease; }
-
-  .matrix-section h2 {
-    font-family: var(--mono);
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: var(--text);
-  }
-
-  .matrix-wrap {
-    overflow: auto;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    max-height: 500px;
-  }
-
-  .matrix-wrap table { font-size: 0.75rem; }
-
-  .matrix-wrap th {
-    background: var(--surface-2);
-    padding: 0.4rem 0.6rem;
-    font-family: var(--mono);
-    font-weight: 500;
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    border: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
-
-  .matrix-wrap th.row-header {
-    position: sticky;
-    left: 0;
-    z-index: 3;
-    text-align: right;
-  }
-
-  .matrix-wrap th.corner {
-    position: sticky;
-    top: 0;
-    left: 0;
-    z-index: 4;
-  }
-
-  .matrix-wrap td {
-    padding: 0.35rem 0.6rem;
-    text-align: center;
-    border: 1px solid var(--border);
-    font-size: 0.78rem;
-    font-family: var(--mono);
-  }
-
-  .matrix-wrap td.self { color: #3a3e4c; }
-  .matrix-wrap td.hot { background: var(--danger-dim); color: var(--danger); font-weight: 600; }
-
-  /* Export area */
-  .export-bar {
-    display: flex;
-    gap: 0.75rem;
-    margin-top: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .stats-bar {
-    display: flex;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-  }
-
-  .stat {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.75rem 1.1rem;
-    min-width: 130px;
-  }
-
-  .stat .val {
-    font-family: var(--mono);
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: var(--accent);
-  }
-
-  .stat .lbl {
-    font-size: 0.72rem;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-top: 0.15rem;
-  }
-
-  .stat.danger .val { color: var(--danger); }
-
-  footer {
-    margin-top: 3rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--border);
-    font-size: 0.75rem;
-    color: #4a4e5c;
-    font-family: var(--mono);
-  }
+  footer { margin-top:3rem; padding-top:1.25rem; border-top:1px solid var(--border); font-size:0.75rem; color:#4a4e5c; font-family:var(--mono); }
 </style>
 </head>
 <body>
@@ -503,57 +127,85 @@
   <header>
     <div class="header-row">
       <div>
-        <h1>▧ Sequence Distance Checker</h1>
-        <p>Paste nucleotide sequences with labels. Computes pairwise Levenshtein distances and flags pairs below your similarity threshold.</p>
+        <h1>&#9639; Sequence Distance Checker</h1>
+        <p>Compute pairwise Levenshtein distances between nucleotide sequences. Flag pairs that are too similar.</p>
       </div>
-      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">☀</button>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span style="font-size:0.75rem;color:var(--text-dim);font-family:var(--mono)">Theme</span>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">&#9790;</button>
+      </div>
     </div>
   </header>
 
-  <div class="input-section">
-    <div>
-      <label for="seqInput">Sequences (one per line)</label>
-      <textarea id="seqInput" placeholder="Paste sequences — one per line, label and sequence separated by tab, comma, or space.&#10;&#10;Example:&#10;BC001  ATCGATCG&#10;BC002  ATCGATCC&#10;BC003  TTGGAACC&#10;BC004  ATCGTTCG"></textarea>
-    </div>
-    <div class="controls">
-      <div class="threshold-group">
-        <label for="threshold">Min distance threshold</label>
-        <input type="number" id="threshold" value="3" min="1" max="50">
-      </div>
-      <div class="format-group">
-        <label for="delimiter">Delimiter</label>
-        <select id="delimiter">
-          <option value="auto">Auto-detect</option>
-          <option value="tab">Tab</option>
-          <option value="comma">Comma</option>
-          <option value="space">Space</option>
-        </select>
-      </div>
-      <button class="run" onclick="analyze()">Compute Distances</button>
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="pairwise" onclick="switchTab('pairwise')">Pairwise</button>
+    <button class="tab-btn" data-tab="grouped" onclick="switchTab('grouped')">Grouped</button>
+  </div>
 
+  <!-- ===== TAB 1: PAIRWISE ===== -->
+  <div id="tab-pairwise" class="tab-panel active">
+    <div class="input-section">
+      <div>
+        <label for="seqInput">Sequences (one per line: label, sequence)</label>
+        <textarea id="seqInput" placeholder="BC001  ATCGATCGATCG&#10;BC002  ATCGATCGATCC&#10;BC003  TTGGAACCTTGG"></textarea>
+      </div>
+      <div class="controls">
+        <div class="threshold-group"><label for="threshold">Min distance threshold</label><input type="number" id="threshold" value="3" min="1" max="50"></div>
+        <div class="format-group"><label for="delimiter">Delimiter</label><select id="delimiter"><option value="auto">Auto-detect</option><option value="tab">Tab</option><option value="comma">Comma</option><option value="space">Space</option></select></div>
+        <button class="run" onclick="analyze()">Compute Distances</button>
+      </div>
+    </div>
+    <div id="alertBanner" class="alert-banner"></div>
+    <div id="statsBar" class="stats-bar"></div>
+    <div id="resultsSection" class="results-section">
+      <h2 class="section-title">Minimum Distance per Sequence</h2>
+      <div class="table-wrap"><table><thead id="resultsHead"></thead><tbody id="resultsBody"></tbody></table></div>
+    </div>
+    <div id="matrixSection" class="matrix-section">
+      <h2 class="section-title">Full Pairwise Distance Matrix</h2>
+      <div class="matrix-wrap" id="matrixWrap"></div>
+      <div class="export-bar">
+        <button class="secondary" onclick="exportCSV()">Export Summary CSV</button>
+        <button class="secondary" onclick="exportMatrixCSV()">Export Full Matrix CSV</button>
+      </div>
     </div>
   </div>
 
-  <div id="alertBanner" class="alert-banner"></div>
-
-  <div id="statsBar" class="stats-bar"></div>
-
-  <div id="resultsSection" class="results-section">
-    <h2>Minimum Distance per Sequence</h2>
-    <div class="table-wrap">
-      <table id="resultsTable">
-        <thead id="resultsHead"></thead>
-        <tbody id="resultsBody"></tbody>
-      </table>
+  <!-- ===== TAB 2: GROUPED ===== -->
+  <div id="tab-grouped" class="tab-panel">
+    <div class="input-section">
+      <div>
+        <label for="grpInput">Grouped sequences &mdash; 3 columns: group, label, sequence</label>
+        <textarea id="grpInput" placeholder="PanelA  BC001  ATCGATCGATCG&#10;PanelA  BC002  ATCGATCGATCC&#10;PanelB  BC003  TTGGAACCTTGG&#10;PanelB  BC004  GGCCAAGGCCAA"></textarea>
+      </div>
+      <div class="controls">
+        <div class="threshold-group"><label for="grpThreshold">Min distance threshold</label><input type="number" id="grpThreshold" value="3" min="1" max="50"></div>
+        <div class="format-group"><label for="grpDelimiter">Delimiter</label><select id="grpDelimiter"><option value="auto">Auto-detect</option><option value="tab">Tab</option><option value="comma">Comma</option></select></div>
+        <button class="run" onclick="analyzeGrouped()">Compute Grouped Distances</button>
+      </div>
     </div>
-  </div>
+    <div id="grpParseError" class="parse-error"></div>
+    <div id="grpAlertBanner" class="alert-banner"></div>
+    <div id="grpStatsBar" class="stats-bar"></div>
 
-  <div id="matrixSection" class="matrix-section">
-    <h2>Full Pairwise Distance Matrix</h2>
-    <div class="matrix-wrap" id="matrixWrap"></div>
-    <div class="export-bar">
-      <button class="secondary" onclick="exportCSV()">Export Summary CSV</button>
-      <button class="secondary" onclick="exportMatrixCSV()">Export Full Matrix CSV</button>
+    <div id="intraSection" class="group-section">
+      <h2 class="section-title">Intra-Group Distances</h2>
+      <p class="desc">Minimum pairwise distance <em>within</em> each group. Single-sequence groups have no intra-group pairs.</p>
+      <div class="table-wrap"><table><thead id="intraHead"></thead><tbody id="intraBody"></tbody></table></div>
+    </div>
+    <div id="interSection" class="group-section">
+      <h2 class="section-title">Inter-Group Minimum Distances</h2>
+      <p class="desc">Minimum edit distance between every pair of groups, across all sequence combinations.</p>
+      <div class="matrix-wrap" id="interMatrixWrap"></div>
+    </div>
+    <div id="grpDetailSection" class="group-section">
+      <h2 class="section-title">Per-Sequence Detail</h2>
+      <p class="desc">Each sequence's nearest neighbor within its own group (intra) and in any other group (inter).</p>
+      <div class="table-wrap"><table><thead id="grpDetailHead"></thead><tbody id="grpDetailBody"></tbody></table></div>
+      <div class="export-bar">
+        <button class="secondary" onclick="exportGroupedCSV()">Export Detail CSV</button>
+        <button class="secondary" onclick="exportInterCSV()">Export Inter-Group Matrix CSV</button>
+      </div>
     </div>
   </div>
 
@@ -561,376 +213,157 @@
 </div>
 
 <script>
-// --- Theme ---
-function toggleTheme() {
-  const root = document.documentElement;
-  const btn = document.querySelector('.theme-toggle');
-  root.classList.toggle('light');
-  btn.textContent = root.classList.contains('light') ? '☾' : '☀';
+// ===== SHARED =====
+function toggleTheme(){document.documentElement.classList.toggle('light');document.querySelector('.theme-toggle').textContent=document.documentElement.classList.contains('light')?'\u263E':'\u2600';}
+function switchTab(id){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+id));}
+
+function levenshtein(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,i)=>i),c=new Array(n+1);for(let i=1;i<=m;i++){c[0]=i;for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));[p,c]=[c,p];}return p[n];}
+
+function nwAlign(a,b){
+  const MA=2,MI=-3,GO=-3,GE=-1,NEG=-1e9,m=a.length,n=b.length;
+  const M=Array.from({length:m+1},()=>new Float64Array(n+1).fill(NEG));
+  const X=Array.from({length:m+1},()=>new Float64Array(n+1).fill(NEG));
+  const Y=Array.from({length:m+1},()=>new Float64Array(n+1).fill(NEG));
+  M[0][0]=0;for(let i=1;i<=m;i++)X[i][0]=GO+(i-1)*GE;for(let j=1;j<=n;j++)Y[0][j]=GO+(j-1)*GE;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){const s=a[i-1]===b[j-1]?MA:MI;M[i][j]=Math.max(M[i-1][j-1],X[i-1][j-1],Y[i-1][j-1])+s;X[i][j]=Math.max(M[i-1][j]+GO,X[i-1][j]+GE,Y[i-1][j]+GO);Y[i][j]=Math.max(M[i][j-1]+GO,X[i][j-1]+GO,Y[i][j-1]+GE);}
+  let ai='',bi='',i=m,j=n,best=Math.max(M[m][n],X[m][n],Y[m][n]),st=best===M[m][n]?'M':best===X[m][n]?'X':'Y';
+  while(i>0||j>0){if(st==='M'&&i>0&&j>0){ai=a[i-1]+ai;bi=b[j-1]+bi;const pv=M[i][j]-(a[i-1]===b[j-1]?MA:MI);st=Math.abs(M[i-1][j-1]-pv)<.5?'M':Math.abs(X[i-1][j-1]-pv)<.5?'X':'Y';i--;j--;}else if(st==='X'&&i>0){ai=a[i-1]+ai;bi='-'+bi;st=Math.abs(X[i-1][j]+GE-X[i][j])<.5?'X':Math.abs(M[i-1][j]+GO-X[i][j])<.5?'M':'Y';i--;}else if(j>0){ai='-'+ai;bi=b[j-1]+bi;st=Math.abs(Y[i][j-1]+GE-Y[i][j])<.5?'Y':Math.abs(M[i][j-1]+GO-Y[i][j])<.5?'M':'X';j--;}else break;}
+  return{alignA:ai,alignB:bi};
 }
 
-// --- Levenshtein ---
-function levenshtein(a, b) {
-  const m = a.length, n = b.length;
-  if (m === 0) return n;
-  if (n === 0) return m;
-  let prev = Array.from({length: n + 1}, (_, i) => i);
-  let curr = new Array(n + 1);
-  for (let i = 1; i <= m; i++) {
-    curr[0] = i;
-    for (let j = 1; j <= n; j++) {
-      const cost = a[i-1] === b[j-1] ? 0 : 1;
-      curr[j] = Math.min(prev[j] + 1, curr[j-1] + 1, prev[j-1] + cost);
-    }
-    [prev, curr] = [curr, prev];
-  }
-  return prev[n];
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function showAlertOn(id,type,msg,det){const el=document.getElementById(id);el.className='alert-banner '+type;el.innerHTML=`<span class="icon">${type==='pass'?'\u2713':'\u26A0'}</span><div><div>${msg}</div>${det?'<div class="alert-details">'+esc(det)+'</div>':''}</div>`;}
+function hideAlert(id){document.getElementById(id).className='alert-banner';}
+function downloadCSV(rows,fn){const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=fn;a.click();}
+function splitLine(line,delim){if(delim==='auto'){if(line.includes('\t'))return line.split('\t');if(line.includes(','))return line.split(',');return line.trim().split(/\s+/);}if(delim==='tab')return line.split('\t');if(delim==='comma')return line.split(',');return line.trim().split(/\s+/);}
+
+const GC=['#5de4c7','#fbbf24','#f87171','#818cf8','#fb923c','#34d399','#f472b6','#60a5fa','#a78bfa','#facc15'];
+function chip(name,i){const c=GC[i%GC.length];return `<span class="group-chip" style="background:${c}20;color:${c}">${esc(name)}</span>`;}
+
+// ===== TAB 1: PAIRWISE =====
+let lastResults=null,lastMatrix=null,lastSeqs=null,curSort={col:null,asc:true};
+
+function analyze(){
+  const raw=document.getElementById('seqInput').value,thresh=parseInt(document.getElementById('threshold').value)||3,delim=document.getElementById('delimiter').value;
+  const lines=raw.trim().split('\n').filter(l=>l.trim()),seqs=[];
+  for(const line of lines){let p=splitLine(line,delim).map(s=>s.trim()).filter(Boolean);if(p.length===1)seqs.push({label:'Seq'+(seqs.length+1),seq:p[0].toUpperCase()});else if(p.length>=2)seqs.push({label:p.slice(0,-1).join(' '),seq:p[p.length-1].toUpperCase()});}
+  if(seqs.length<2){showAlertOn('alertBanner','fail','Need at least 2 sequences.','');document.getElementById('resultsSection').style.display='none';document.getElementById('matrixSection').style.display='none';document.getElementById('statsBar').innerHTML='';return;}
+
+  const n=seqs.length,matrix=Array.from({length:n},()=>new Array(n).fill(0));
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const d=levenshtein(seqs[i].seq,seqs[j].seq);matrix[i][j]=d;matrix[j][i]=d;}
+
+  const results=seqs.map((s,i)=>{let md=Infinity,nr='',ns='';for(let j=0;j<n;j++){if(i===j)continue;if(matrix[i][j]<md){md=matrix[i][j];nr=seqs[j].label;ns=seqs[j].seq;}}return{label:s.label,seq:s.seq,minDist:md,nearest:nr,nearestSeq:ns,flagged:md<thresh};});
+  const fp=[];for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)if(matrix[i][j]<thresh)fp.push({a:seqs[i].label,b:seqs[j].label,d:matrix[i][j]});
+
+  lastResults=results;lastMatrix=matrix;lastSeqs=seqs;curSort={col:null,asc:true};
+
+  if(!fp.length)showAlertOn('alertBanner','pass','All pairs \u2265 '+thresh+'. No conflicts.','');
+  else showAlertOn('alertBanner','fail',fp.length+' pair'+(fp.length>1?'s':'')+' below threshold (< '+thresh+')',fp.map(p=>p.a+' \u2194 '+p.b+': '+p.d).join('  \u00B7  '));
+
+  const ad=[];for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)ad.push(matrix[i][j]);
+  document.getElementById('statsBar').innerHTML=
+    '<div class="stat"><div class="val">'+n+'</div><div class="lbl">Sequences</div></div>'+
+    '<div class="stat '+(Math.min(...ad)<thresh?'danger':'')+'"><div class="val">'+Math.min(...ad)+'</div><div class="lbl">Global min</div></div>'+
+    '<div class="stat"><div class="val">'+Math.max(...ad)+'</div><div class="lbl">Global max</div></div>'+
+    '<div class="stat"><div class="val">'+(ad.reduce((a,b)=>a+b,0)/ad.length).toFixed(1)+'</div><div class="lbl">Mean</div></div>'+
+    '<div class="stat '+(fp.length?'danger':'')+'"><div class="val">'+fp.length+'</div><div class="lbl">Flagged</div></div>';
+
+  document.getElementById('resultsSection').style.display='block';
+  document.getElementById('resultsHead').innerHTML='<tr><th class="sortable" onclick="sortT(0)">Label</th><th class="sortable" onclick="sortT(1)">Sequence</th><th class="sortable" onclick="sortT(2)">Length</th><th class="sortable" onclick="sortT(3)">Min Dist</th><th class="sortable" onclick="sortT(4)">Nearest</th><th class="sortable" onclick="sortT(5)">Status</th></tr>';
+  fillPW(results,thresh);
+
+  document.getElementById('matrixSection').style.display='block';
+  let mh='<table><thead><tr><th class="corner"></th>';for(const s of seqs)mh+='<th>'+esc(s.label)+'</th>';mh+='</tr></thead><tbody>';
+  for(let i=0;i<n;i++){mh+='<tr><th class="row-header">'+esc(seqs[i].label)+'</th>';for(let j=0;j<n;j++)mh+=i===j?'<td class="self">\u2014</td>':'<td class="'+(matrix[i][j]<thresh?'hot':'')+'">'+matrix[i][j]+'</td>';mh+='</tr>';}
+  mh+='</tbody></table>';document.getElementById('matrixWrap').innerHTML=mh;
 }
 
-// --- Needleman-Wunsch global alignment ---
-function nwAlign(a, b) {
-  const MATCH = 2, MISMATCH = -3, GAP_OPEN = -3, GAP_EXT = -1;
-  const m = a.length, n = b.length;
-  // Affine gap: M[i][j] = best ending in match/mismatch, X[i][j] = gap in b, Y[i][j] = gap in a
-  const NEG = -1e9;
-  const M = Array.from({length: m+1}, () => new Float64Array(n+1).fill(NEG));
-  const X = Array.from({length: m+1}, () => new Float64Array(n+1).fill(NEG));
-  const Y = Array.from({length: m+1}, () => new Float64Array(n+1).fill(NEG));
-  M[0][0] = 0;
-  for (let i = 1; i <= m; i++) { X[i][0] = GAP_OPEN + (i-1) * GAP_EXT; }
-  for (let j = 1; j <= n; j++) { Y[0][j] = GAP_OPEN + (j-1) * GAP_EXT; }
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      const s = a[i-1] === b[j-1] ? MATCH : MISMATCH;
-      const prev = Math.max(M[i-1][j-1], X[i-1][j-1], Y[i-1][j-1]);
-      M[i][j] = prev + s;
-      X[i][j] = Math.max(M[i-1][j] + GAP_OPEN, X[i-1][j] + GAP_EXT, Y[i-1][j] + GAP_OPEN);
-      Y[i][j] = Math.max(M[i][j-1] + GAP_OPEN, X[i][j-1] + GAP_OPEN, Y[i][j-1] + GAP_EXT);
-    }
-  }
-  // Traceback
-  let ai = '', bi = '', i = m, j = n;
-  let state = 'M';
-  const best = Math.max(M[m][n], X[m][n], Y[m][n]);
-  if (best === X[m][n]) state = 'X';
-  else if (best === Y[m][n]) state = 'Y';
-  while (i > 0 || j > 0) {
-    if (state === 'M' && i > 0 && j > 0) {
-      ai = a[i-1] + ai; bi = b[j-1] + bi;
-      const s = a[i-1] === b[j-1] ? MATCH : MISMATCH;
-      const prev = M[i][j] - s;
-      if (i-1 >= 0 && j-1 >= 0 && Math.abs(M[i-1][j-1] - prev) < 0.5) state = 'M';
-      else if (i-1 >= 0 && j-1 >= 0 && Math.abs(X[i-1][j-1] - prev) < 0.5) state = 'X';
-      else state = 'Y';
-      i--; j--;
-    } else if (state === 'X' && i > 0) {
-      ai = a[i-1] + ai; bi = '-' + bi;
-      if (Math.abs(X[i-1][j] + GAP_EXT - X[i][j]) < 0.5) state = 'X';
-      else if (Math.abs(M[i-1][j] + GAP_OPEN - X[i][j]) < 0.5) state = 'M';
-      else state = 'Y';
-      i--;
-    } else if (j > 0) {
-      ai = '-' + ai; bi = b[j-1] + bi;
-      if (Math.abs(Y[i][j-1] + GAP_EXT - Y[i][j]) < 0.5) state = 'Y';
-      else if (Math.abs(M[i][j-1] + GAP_OPEN - Y[i][j]) < 0.5) state = 'M';
-      else state = 'X';
-      j--;
-    } else break;
-  }
-  return { alignA: ai, alignB: bi };
-}
-
-// --- Parsing ---
-function parseInput(raw, delim) {
-  const lines = raw.trim().split('\n').filter(l => l.trim());
-  const barcodes = [];
-  for (const line of lines) {
-    let parts;
-    if (delim === 'auto') {
-      if (line.includes('\t')) parts = line.split('\t');
-      else if (line.includes(',')) parts = line.split(',');
-      else parts = line.trim().split(/\s+/);
-    } else if (delim === 'tab') parts = line.split('\t');
-    else if (delim === 'comma') parts = line.split(',');
-    else parts = line.trim().split(/\s+/);
-
-    parts = parts.map(p => p.trim()).filter(Boolean);
-    if (parts.length === 1) {
-      barcodes.push({ label: `Seq${barcodes.length+1}`, seq: parts[0].toUpperCase() });
-    } else if (parts.length >= 2) {
-      // last token that looks like a nucleotide sequence
-      const seqIdx = parts.length - 1;
-      const label = parts.slice(0, seqIdx).join(' ');
-      barcodes.push({ label, seq: parts[seqIdx].toUpperCase() });
-    }
-  }
-  return barcodes;
-}
-
-let lastResults = null;
-let lastMatrix = null;
-let lastBarcodes = null;
-let currentSort = { col: null, asc: true };
-
-function analyze() {
-  const raw = document.getElementById('seqInput').value;
-  const thresh = parseInt(document.getElementById('threshold').value) || 3;
-  const delim = document.getElementById('delimiter').value;
-
-  const barcodes = parseInput(raw, delim);
-  if (barcodes.length < 2) {
-    showAlert('fail', 'Need at least 2 sequences to compare.', '');
-    document.getElementById('resultsSection').style.display = 'none';
-    document.getElementById('matrixSection').style.display = 'none';
-    document.getElementById('statsBar').innerHTML = '';
-    return;
-  }
-
-  const n = barcodes.length;
-  const matrix = Array.from({length: n}, () => new Array(n).fill(0));
-
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      const d = levenshtein(barcodes[i].seq, barcodes[j].seq);
-      matrix[i][j] = d;
-      matrix[j][i] = d;
-    }
-  }
-
-  // Build results: min distance per sequence
-  const results = barcodes.map((bc, i) => {
-    let minDist = Infinity, nearest = '', nearestSeq = '';
-    for (let j = 0; j < n; j++) {
-      if (i === j) continue;
-      if (matrix[i][j] < minDist) {
-        minDist = matrix[i][j];
-        nearest = barcodes[j].label;
-        nearestSeq = barcodes[j].seq;
-      }
-    }
-    return { label: bc.label, seq: bc.seq, minDist, nearest, nearestSeq, flagged: minDist < thresh };
-  });
-
-  // Flagged pairs
-  const flaggedPairs = [];
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      if (matrix[i][j] < thresh) {
-        flaggedPairs.push({ a: barcodes[i].label, b: barcodes[j].label, dist: matrix[i][j] });
-      }
-    }
-  }
-
-  lastResults = results;
-  lastMatrix = matrix;
-  lastBarcodes = barcodes;
-  currentSort = { col: null, asc: true };
-
-  // Alert
-  if (flaggedPairs.length === 0) {
-    showAlert('pass', `All pairs have distance ≥ ${thresh}. No conflicts detected.`, '');
-  } else {
-    const details = flaggedPairs.map(p => `${p.a} ↔ ${p.b}: ${p.dist}`).join('  ·  ');
-    showAlert('fail',
-      `${flaggedPairs.length} pair${flaggedPairs.length > 1 ? 's' : ''} below threshold (< ${thresh})`,
-      details
-    );
-  }
-
-  // Stats
-  const allDists = [];
-  for (let i = 0; i < n; i++) for (let j = i+1; j < n; j++) allDists.push(matrix[i][j]);
-  const minAll = Math.min(...allDists);
-  const maxAll = Math.max(...allDists);
-  const meanAll = (allDists.reduce((a,b) => a+b, 0) / allDists.length).toFixed(1);
-
-  document.getElementById('statsBar').innerHTML = `
-    <div class="stat"><div class="val">${n}</div><div class="lbl">Sequences</div></div>
-    <div class="stat ${minAll < thresh ? 'danger' : ''}"><div class="val">${minAll}</div><div class="lbl">Global min dist</div></div>
-    <div class="stat"><div class="val">${maxAll}</div><div class="lbl">Global max dist</div></div>
-    <div class="stat"><div class="val">${meanAll}</div><div class="lbl">Mean distance</div></div>
-    <div class="stat ${flaggedPairs.length > 0 ? 'danger' : ''}"><div class="val">${flaggedPairs.length}</div><div class="lbl">Flagged pairs</div></div>
-  `;
-
-  renderTable(results, thresh);
-  renderMatrix(barcodes, matrix, thresh);
-}
-
-function renderTable(results, thresh) {
-  const section = document.getElementById('resultsSection');
-  section.style.display = 'block';
-
-  const head = document.getElementById('resultsHead');
-  head.innerHTML = `<tr>
-    <th onclick="sortTable(0)">Label <span class="sort-arrow"></span></th>
-    <th onclick="sortTable(1)">Sequence <span class="sort-arrow"></span></th>
-    <th onclick="sortTable(2)">Length <span class="sort-arrow"></span></th>
-    <th onclick="sortTable(3)">Min Dist <span class="sort-arrow"></span></th>
-    <th onclick="sortTable(4)">Nearest <span class="sort-arrow"></span></th>
-    <th onclick="sortTable(5)">Status <span class="sort-arrow"></span></th>
-  </tr>`;
-
-  fillTableBody(results, thresh);
-}
-
-function fillTableBody(results, thresh) {
-  const body = document.getElementById('resultsBody');
-  body.innerHTML = results.map((r, idx) => {
-    const badgeClass = r.minDist < thresh ? 'danger' : r.minDist < thresh + 2 ? 'warn' : 'ok';
-    const badgeText = r.minDist < thresh ? 'FAIL' : r.minDist < thresh + 2 ? 'CLOSE' : 'OK';
-    return `<tr class="${r.flagged ? 'flagged' : ''}" id="row-${idx}">
-      <td>${esc(r.label)}</td>
-      <td><span class="seq">${esc(r.seq)}</span></td>
-      <td>${r.seq.length}</td>
-      <td>${r.minDist}</td>
-      <td>${esc(r.nearest)} <button class="align-btn" onclick="toggleAlign(${idx}, this)" title="Show alignment">▸</button></td>
-      <td><span class="badge ${badgeClass}">${badgeText}</span></td>
-    </tr>
-    <tr class="align-row" id="align-${idx}" style="display:none">
-      <td colspan="6"><div class="align-block" id="align-content-${idx}"></div></td>
-    </tr>`;
+function fillPW(results,thresh){
+  document.getElementById('resultsBody').innerHTML=results.map((r,idx)=>{
+    const bc=r.minDist<thresh?'danger':r.minDist<thresh+2?'warn':'ok',bt=r.minDist<thresh?'FAIL':r.minDist<thresh+2?'CLOSE':'OK';
+    return '<tr class="'+(r.flagged?'flagged':'')+'" id="pw-r-'+idx+'"><td>'+esc(r.label)+'</td><td><span class="seq">'+esc(r.seq)+'</span></td><td>'+r.seq.length+'</td><td>'+r.minDist+'</td><td>'+esc(r.nearest)+' <button class="align-btn" onclick="togA('+idx+',this)">\u25B8</button></td><td><span class="badge '+bc+'">'+bt+'</span></td></tr><tr class="align-row" id="pw-a-'+idx+'" style="display:none"><td colspan="6"><div class="align-block" id="pw-ac-'+idx+'"></div></td></tr>';
   }).join('');
 }
 
-function toggleAlign(idx, btn) {
-  const row = document.getElementById('align-' + idx);
-  const content = document.getElementById('align-content-' + idx);
-  const visible = row.style.display !== 'none';
-  if (visible) {
-    row.style.display = 'none';
-    btn.textContent = '▸';
-    btn.classList.remove('open');
-    return;
-  }
-  // Look up the result by label from the DOM row
-  const label = btn.closest('tr').children[0].textContent;
-  const target = lastResults.find(x => x.label === label);
-  if (!target || !target.nearestSeq) return;
-  const { alignA, alignB } = nwAlign(target.seq, target.nearestSeq);
-  content.innerHTML = renderAlignment(target.label, target.nearest, alignA, alignB);
-  row.style.display = '';
-  btn.textContent = '▾';
-  btn.classList.add('open');
+function togA(idx,btn){
+  const row=document.getElementById('pw-a-'+idx),ct=document.getElementById('pw-ac-'+idx);
+  if(row.style.display!=='none'){row.style.display='none';btn.textContent='\u25B8';btn.classList.remove('open');return;}
+  const label=btn.closest('tr').children[0].textContent,t=lastResults.find(x=>x.label===label);
+  if(!t||!t.nearestSeq)return;
+  const{alignA,alignB}=nwAlign(t.seq,t.nearestSeq);
+  const sA=t.label.length>8?t.label.slice(0,7)+'\u2026':t.label,sB=t.nearest.length>8?t.nearest.slice(0,7)+'\u2026':t.nearest;
+  let sa='',mid='',sb='';
+  for(let i=0;i<alignA.length;i++){const a=alignA[i],b=alignB[i];if(a==='-'||b==='-'){sa+='<span class="nt-gap">'+a+'</span>';sb+='<span class="nt-gap">'+b+'</span>';mid+='<span class="mid-gap"> </span>';}else if(a===b){sa+='<span class="nt-match">'+a+'</span>';sb+='<span class="nt-match">'+b+'</span>';mid+='<span class="mid-match">|</span>';}else{sa+='<span class="nt-mis">'+a+'</span>';sb+='<span class="nt-mis">'+b+'</span>';mid+='<span class="mid-mis">\u00B7</span>';}}
+  ct.innerHTML='<span class="align-label">'+esc(sA)+'</span> '+sa+'\n<span class="align-label"></span> '+mid+'\n<span class="align-label">'+esc(sB)+'</span> '+sb;
+  row.style.display='';btn.textContent='\u25BE';btn.classList.add('open');
 }
 
-function renderAlignment(labelA, labelB, alignA, alignB) {
-  const shortA = labelA.length > 8 ? labelA.slice(0,7) + '…' : labelA;
-  const shortB = labelB.length > 8 ? labelB.slice(0,7) + '…' : labelB;
-
-  // Build colored sequences and midline
-  let seqAhtml = '', midHtml = '', seqBhtml = '';
-  for (let i = 0; i < alignA.length; i++) {
-    const a = alignA[i], b = alignB[i];
-    if (a === '-' || b === '-') {
-      seqAhtml += `<span class="nt-gap">${a}</span>`;
-      seqBhtml += `<span class="nt-gap">${b}</span>`;
-      midHtml += `<span class="mid-gap"> </span>`;
-    } else if (a === b) {
-      seqAhtml += `<span class="nt-match">${a}</span>`;
-      seqBhtml += `<span class="nt-match">${b}</span>`;
-      midHtml += `<span class="mid-match">|</span>`;
-    } else {
-      seqAhtml += `<span class="nt-mis">${a}</span>`;
-      seqBhtml += `<span class="nt-mis">${b}</span>`;
-      midHtml += `<span class="mid-mis">·</span>`;
-    }
-  }
-
-  return `<span class="align-label">${esc(shortA)}</span> ${seqAhtml}\n<span class="align-label"></span> ${midHtml}\n<span class="align-label">${esc(shortB)}</span> ${seqBhtml}`;
+function sortT(col){
+  if(!lastResults)return;const thresh=parseInt(document.getElementById('threshold').value)||3;
+  if(curSort.col===col)curSort.asc=!curSort.asc;else{curSort.col=col;curSort.asc=true;}
+  const sorted=[...lastResults].sort((a,b)=>{let va,vb;switch(col){case 0:va=a.label;vb=b.label;break;case 1:va=a.seq;vb=b.seq;break;case 2:va=a.seq.length;vb=b.seq.length;break;case 3:va=a.minDist;vb=b.minDist;break;case 4:va=a.nearest;vb=b.nearest;break;case 5:va=a.flagged?0:1;vb=b.flagged?0:1;break;}if(typeof va==='string')return curSort.asc?va.localeCompare(vb):vb.localeCompare(va);return curSort.asc?va-vb:vb-va;});
+  fillPW(sorted,thresh);
 }
 
-function sortTable(colIdx) {
-  if (!lastResults) return;
-  const thresh = parseInt(document.getElementById('threshold').value) || 3;
-  const keys = ['label', 'seq', 'seqLen', 'minDist', 'nearest', 'status'];
-  if (currentSort.col === colIdx) {
-    currentSort.asc = !currentSort.asc;
-  } else {
-    currentSort.col = colIdx;
-    currentSort.asc = true;
-  }
-  const sorted = [...lastResults].sort((a, b) => {
-    let va, vb;
-    switch(colIdx) {
-      case 0: va = a.label; vb = b.label; break;
-      case 1: va = a.seq; vb = b.seq; break;
-      case 2: va = a.seq.length; vb = b.seq.length; break;
-      case 3: va = a.minDist; vb = b.minDist; break;
-      case 4: va = a.nearest; vb = b.nearest; break;
-      case 5: va = a.flagged ? 0 : 1; vb = b.flagged ? 0 : 1; break;
-    }
-    if (typeof va === 'string') return currentSort.asc ? va.localeCompare(vb) : vb.localeCompare(va);
-    return currentSort.asc ? va - vb : vb - va;
-  });
-  fillTableBody(sorted, thresh);
+function exportCSV(){if(!lastResults)return;const r=[['Label','Sequence','Length','MinDist','Nearest','Flagged']];for(const x of lastResults)r.push([x.label,x.seq,x.seq.length,x.minDist,x.nearest,x.flagged?'YES':'']);downloadCSV(r,'sequence_distances.csv');}
+function exportMatrixCSV(){if(!lastMatrix||!lastSeqs)return;const n=lastSeqs.length,r=[[''].concat(lastSeqs.map(b=>b.label))];for(let i=0;i<n;i++)r.push([lastSeqs[i].label].concat(lastMatrix[i].map(String)));downloadCSV(r,'sequence_matrix.csv');}
+
+
+// ===== TAB 2: GROUPED =====
+let grpDetail=null,interMat=null,gNames=null;
+
+function analyzeGrouped(){
+  const raw=document.getElementById('grpInput').value,thresh=parseInt(document.getElementById('grpThreshold').value)||3,delim=document.getElementById('grpDelimiter').value;
+  const errEl=document.getElementById('grpParseError');errEl.className='parse-error';errEl.textContent='';hideAlert('grpAlertBanner');
+
+  const lines=raw.trim().split('\n').filter(l=>l.trim()),errors=[],seqs=[];
+  for(let li=0;li<lines.length;li++){const p=splitLine(lines[li],delim).map(s=>s.trim()).filter(Boolean);if(p.length<3){errors.push('Line '+(li+1)+': expected 3 columns, got '+p.length);continue;}if(p.length>3)errors.push('Line '+(li+1)+': expected 3 columns, got '+p.length+' \u2014 using first 3');seqs.push({group:p[0],label:p[1],seq:p[2].toUpperCase()});}
+  if(errors.length){errEl.textContent=errors.join('\n');errEl.className='parse-error visible';}
+  if(seqs.length<2){showAlertOn('grpAlertBanner','fail','Need at least 2 valid sequences.','');['intraSection','interSection','grpDetailSection'].forEach(id=>document.getElementById(id).className='group-section');document.getElementById('grpStatsBar').innerHTML='';return;}
+
+  const groups=new Map();for(const s of seqs){if(!groups.has(s.group))groups.set(s.group,[]);groups.get(s.group).push(s);}
+  const gN=[...groups.keys()];gNames=gN;const nGrp=gN.length,n=seqs.length;
+
+  const dist=Array.from({length:n},()=>new Array(n).fill(0));
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const d=levenshtein(seqs[i].seq,seqs[j].seq);dist[i][j]=d;dist[j][i]=d;}
+
+  // Intra
+  const intra=gN.map(gn=>{const idx=[];for(let i=0;i<n;i++)if(seqs[i].group===gn)idx.push(i);if(idx.length<2)return{group:gn,count:idx.length,minDist:null,meanDist:null,minPair:'',flagged:false};let md=Infinity,mp='',tot=0,cnt=0;for(let a=0;a<idx.length;a++)for(let b=a+1;b<idx.length;b++){const d=dist[idx[a]][idx[b]];tot+=d;cnt++;if(d<md){md=d;mp=seqs[idx[a]].label+' \u2194 '+seqs[idx[b]].label;}}return{group:gn,count:idx.length,minDist:md,meanDist:(tot/cnt).toFixed(1),minPair:mp,flagged:md<thresh};});
+
+  // Inter
+  interMat=Array.from({length:nGrp},()=>new Array(nGrp).fill(null));
+  for(let gi=0;gi<nGrp;gi++)for(let gj=gi+1;gj<nGrp;gj++){let md=Infinity;for(let i=0;i<n;i++){if(seqs[i].group!==gN[gi])continue;for(let j=0;j<n;j++){if(seqs[j].group!==gN[gj])continue;if(dist[i][j]<md)md=dist[i][j];}}interMat[gi][gj]=md;interMat[gj][gi]=md;}
+
+  // Per-seq detail
+  grpDetail=seqs.map((s,i)=>{let iM=Infinity,iN='',xM=Infinity,xN='',xG='';for(let j=0;j<n;j++){if(i===j)continue;if(seqs[j].group===s.group){if(dist[i][j]<iM){iM=dist[i][j];iN=seqs[j].label;}}else{if(dist[i][j]<xM){xM=dist[i][j];xN=seqs[j].label;xG=seqs[j].group;}}}return{...s,iM:isFinite(iM)?iM:null,iN,xM:isFinite(xM)?xM:null,xN,xG,fI:isFinite(iM)&&iM<thresh,fX:isFinite(xM)&&xM<thresh};});
+
+  // Alerts
+  const iF=intra.filter(r=>r.flagged),xF=[];for(let gi=0;gi<nGrp;gi++)for(let gj=gi+1;gj<nGrp;gj++)if(interMat[gi][gj]<thresh)xF.push({a:gN[gi],b:gN[gj],d:interMat[gi][gj]});
+  const tf=iF.length+xF.length;
+  if(!tf)showAlertOn('grpAlertBanner','pass','All intra- and inter-group distances \u2265 '+thresh+'.','');
+  else{const parts=[];if(iF.length)parts.push(iF.length+' group'+(iF.length>1?'s':'')+' with intra min < '+thresh);if(xF.length)parts.push(xF.length+' group pair'+(xF.length>1?'s':'')+' with inter min < '+thresh);showAlertOn('grpAlertBanner','fail',parts.join('; '),iF.map(r=>'[intra] '+r.group+': '+r.minDist).concat(xF.map(r=>'[inter] '+r.a+' \u2194 '+r.b+': '+r.d)).join('  \u00B7  '));}
+
+  document.getElementById('grpStatsBar').innerHTML='<div class="stat"><div class="val">'+n+'</div><div class="lbl">Sequences</div></div><div class="stat"><div class="val">'+nGrp+'</div><div class="lbl">Groups</div></div><div class="stat '+(tf?'danger':'')+'"><div class="val">'+tf+'</div><div class="lbl">Flags</div></div>';
+
+  // Render intra
+  document.getElementById('intraSection').className='group-section visible';
+  document.getElementById('intraHead').innerHTML='<tr><th>Group</th><th>Count</th><th>Min Intra-Dist</th><th>Mean Dist</th><th>Closest Pair</th><th>Status</th></tr>';
+  document.getElementById('intraBody').innerHTML=intra.map((r,i)=>{const bc=r.minDist===null?'ok':r.minDist<thresh?'danger':r.minDist<thresh+2?'warn':'ok',bt=r.minDist===null?'N/A':r.minDist<thresh?'FAIL':r.minDist<thresh+2?'CLOSE':'OK';return '<tr class="'+(r.flagged?'flagged':'')+'"><td>'+chip(r.group,i)+'</td><td>'+r.count+'</td><td>'+(r.minDist!=null?r.minDist:'\u2014')+'</td><td>'+(r.meanDist||'\u2014')+'</td><td style="font-size:0.78rem">'+(esc(r.minPair)||'\u2014')+'</td><td><span class="badge '+bc+'">'+bt+'</span></td></tr>';}).join('');
+
+  // Render inter matrix
+  document.getElementById('interSection').className='group-section visible';
+  let mh='<table><thead><tr><th class="corner">Min Dist</th>';for(let i=0;i<nGrp;i++)mh+='<th>'+chip(gN[i],i)+'</th>';mh+='</tr></thead><tbody>';
+  for(let i=0;i<nGrp;i++){mh+='<tr><th class="row-header">'+chip(gN[i],i)+'</th>';for(let j=0;j<nGrp;j++)mh+=i===j?'<td class="self">\u2014</td>':'<td class="'+(interMat[i][j]<thresh?'hot':'')+'">'+interMat[i][j]+'</td>';mh+='</tr>';}
+  mh+='</tbody></table>';document.getElementById('interMatrixWrap').innerHTML=mh;
+
+  // Render detail
+  document.getElementById('grpDetailSection').className='group-section visible';
+  document.getElementById('grpDetailHead').innerHTML='<tr><th>Group</th><th>Label</th><th>Sequence</th><th>Intra Min</th><th>Intra Nearest</th><th>Inter Min</th><th>Inter Nearest</th></tr>';
+  document.getElementById('grpDetailBody').innerHTML=grpDetail.map(r=>{const gi=gN.indexOf(r.group),ib=r.iM!==null&&r.iM<thresh?' <span class="badge danger">FAIL</span>':'',xb=r.xM!==null&&r.xM<thresh?' <span class="badge danger">FAIL</span>':'';return '<tr class="'+(r.fI||r.fX?'flagged':'')+'"><td>'+chip(r.group,gi)+'</td><td>'+esc(r.label)+'</td><td><span class="seq">'+esc(r.seq)+'</span></td><td>'+(r.iM!=null?r.iM:'\u2014')+ib+'</td><td style="font-size:0.78rem">'+(esc(r.iN)||'\u2014')+'</td><td>'+(r.xM!=null?r.xM:'\u2014')+xb+'</td><td style="font-size:0.78rem">'+(r.xN?esc(r.xN)+' <span style="color:var(--text-dim)">('+esc(r.xG)+')</span>':'\u2014')+'</td></tr>';}).join('');
 }
 
-function renderMatrix(barcodes, matrix, thresh) {
-  const section = document.getElementById('matrixSection');
-  section.style.display = 'block';
-  const wrap = document.getElementById('matrixWrap');
-
-  const n = barcodes.length;
-  let html = '<table><thead><tr><th class="corner"></th>';
-  for (const bc of barcodes) html += `<th>${esc(bc.label)}</th>`;
-  html += '</tr></thead><tbody>';
-
-  for (let i = 0; i < n; i++) {
-    html += `<tr><th class="row-header">${esc(barcodes[i].label)}</th>`;
-    for (let j = 0; j < n; j++) {
-      if (i === j) {
-        html += '<td class="self">—</td>';
-      } else {
-        const cls = matrix[i][j] < thresh ? 'hot' : '';
-        html += `<td class="${cls}">${matrix[i][j]}</td>`;
-      }
-    }
-    html += '</tr>';
-  }
-  html += '</tbody></table>';
-  wrap.innerHTML = html;
-}
-
-function showAlert(type, msg, details) {
-  const el = document.getElementById('alertBanner');
-  el.className = 'alert-banner ' + type;
-  const icon = type === 'pass' ? '✓' : '⚠';
-  el.innerHTML = `<span class="icon">${icon}</span><div><div>${msg}</div>${details ? '<div class="alert-details">' + esc(details) + '</div>' : ''}</div>`;
-}
-
-function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
-
-function exportCSV() {
-  if (!lastResults) return;
-  const rows = [['Label','Sequence','Length','MinDist','Nearest','Flagged']];
-  for (const r of lastResults) {
-    rows.push([r.label, r.seq, r.seq.length, r.minDist, r.nearest, r.flagged ? 'YES' : '']);
-  }
-  downloadCSV(rows, 'sequence_distances.csv');
-}
-
-function exportMatrixCSV() {
-  if (!lastMatrix || !lastBarcodes) return;
-  const n = lastBarcodes.length;
-  const rows = [['', ...lastBarcodes.map(b => b.label)]];
-  for (let i = 0; i < n; i++) {
-    rows.push([lastBarcodes[i].label, ...lastMatrix[i].map(String)]);
-  }
-  downloadCSV(rows, 'sequence_matrix.csv');
-}
-
-function downloadCSV(rows, filename) {
-  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
-  const blob = new Blob([csv], {type: 'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-}
+function exportGroupedCSV(){if(!grpDetail)return;const r=[['Group','Label','Sequence','IntraMinDist','IntraNearestLabel','InterMinDist','InterNearestLabel','InterNearestGroup']];for(const x of grpDetail)r.push([x.group,x.label,x.seq,x.iM!=null?x.iM:'',x.iN,x.xM!=null?x.xM:'',x.xN,x.xG]);downloadCSV(r,'grouped_sequence_distances.csv');}
+function exportInterCSV(){if(!interMat||!gNames)return;const r=[[''].concat(gNames)];for(let i=0;i<gNames.length;i++)r.push([gNames[i]].concat(interMat[i].map(v=>v!=null?v:'')));downloadCSV(r,'inter_group_matrix.csv');}
 </script>
 </body>
 </html>
