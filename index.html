@@ -336,7 +336,7 @@ function analyzeGrouped(){
   for(let gi=0;gi<nGrp;gi++)for(let gj=gi+1;gj<nGrp;gj++){let md=Infinity;for(let i=0;i<n;i++){if(seqs[i].group!==gN[gi])continue;for(let j=0;j<n;j++){if(seqs[j].group!==gN[gj])continue;if(dist[i][j]<md)md=dist[i][j];}}interMat[gi][gj]=md;interMat[gj][gi]=md;}
 
   // Per-seq detail
-  grpDetail=seqs.map((s,i)=>{let iM=Infinity,iN='',xM=Infinity,xN='',xG='';for(let j=0;j<n;j++){if(i===j)continue;if(seqs[j].group===s.group){if(dist[i][j]<iM){iM=dist[i][j];iN=seqs[j].label;}}else{if(dist[i][j]<xM){xM=dist[i][j];xN=seqs[j].label;xG=seqs[j].group;}}}return{...s,iM:isFinite(iM)?iM:null,iN,xM:isFinite(xM)?xM:null,xN,xG,fI:isFinite(iM)&&iM<thW,fX:isFinite(xM)&&xM<thB};});
+  grpDetail=seqs.map((s,i)=>{let iM=Infinity,iN='',iNSeq='',xM=Infinity,xN='',xNSeq='',xG='';for(let j=0;j<n;j++){if(i===j)continue;if(seqs[j].group===s.group){if(dist[i][j]<iM){iM=dist[i][j];iN=seqs[j].label;iNSeq=seqs[j].seq;}}else{if(dist[i][j]<xM){xM=dist[i][j];xN=seqs[j].label;xNSeq=seqs[j].seq;xG=seqs[j].group;}}}return{...s,iM:isFinite(iM)?iM:null,iN,iNSeq,xM:isFinite(xM)?xM:null,xN,xNSeq,xG,fI:isFinite(iM)&&iM<thW,fX:isFinite(xM)&&xM<thB};});
 
   // Alerts
   const iF=intra.filter(r=>r.flagged),xF=[];for(let gi=0;gi<nGrp;gi++)for(let gj=gi+1;gj<nGrp;gj++)if(interMat[gi][gj]<thB)xF.push({a:gN[gi],b:gN[gj],d:interMat[gi][gj]});
@@ -360,12 +360,32 @@ function analyzeGrouped(){
   // Render detail
   document.getElementById('grpDetailSection').className='group-section visible';
   document.getElementById('grpDetailHead').innerHTML='<tr><th>Group</th><th>Label</th><th>Sequence</th><th>Within Min</th><th>Within Nearest</th><th>Within Status</th><th>Between Min</th><th>Between Nearest</th><th>Between Status</th></tr>';
-  document.getElementById('grpDetailBody').innerHTML=grpDetail.map(r=>{const gi=gN.indexOf(r.group);
+  document.getElementById('grpDetailBody').innerHTML=grpDetail.map((r,idx)=>{const gi=gN.indexOf(r.group);
     const ibc=r.iM===null?'ok':r.iM<thW?'danger':r.iM<thW+2?'warn':'ok';
     const ibt=r.iM===null?'SOLO':r.iM<thW?'FAIL':r.iM<thW+2?'CLOSE':'OK';
     const xbc=r.xM===null?'ok':r.xM<thB?'danger':r.xM<thB+2?'warn':'ok';
     const xbt=r.xM===null?'N/A':r.xM<thB?'FAIL':r.xM<thB+2?'CLOSE':'OK';
-    return '<tr class="'+(r.fI||r.fX?'flagged':'')+'"><td>'+chip(r.group,gi)+'</td><td>'+esc(r.label)+'</td><td><span class="seq">'+esc(r.seq)+'</span></td><td>'+(r.iM!=null?r.iM:'\u2014')+'</td><td style="font-size:0.78rem">'+(esc(r.iN)||'\u2014')+'</td><td><span class="badge '+ibc+'">'+ibt+'</span></td><td>'+(r.xM!=null?r.xM:'\u2014')+'</td><td style="font-size:0.78rem">'+(r.xN?esc(r.xN)+' <span style="color:var(--text-dim)">('+esc(r.xG)+')</span>':'\u2014')+'</td><td><span class="badge '+xbc+'">'+xbt+'</span></td></tr>';}).join('');
+    const iAlignBtn=r.iNSeq?(' <button class="align-btn" onclick="togGrpA('+idx+',\'w\',this)" title="Show within-group alignment">\u25B8</button>'):'';
+    const xAlignBtn=r.xNSeq?(' <button class="align-btn" onclick="togGrpA('+idx+',\'b\',this)" title="Show between-group alignment">\u25B8</button>'):'';
+    return '<tr class="'+(r.fI||r.fX?'flagged':'')+'"><td>'+chip(r.group,gi)+'</td><td>'+esc(r.label)+'</td><td><span class="seq">'+esc(r.seq)+'</span></td><td>'+(r.iM!=null?r.iM:'\u2014')+'</td><td style="font-size:0.78rem">'+(esc(r.iN)||'\u2014')+iAlignBtn+'</td><td><span class="badge '+ibc+'">'+ibt+'</span></td><td>'+(r.xM!=null?r.xM:'\u2014')+'</td><td style="font-size:0.78rem">'+(r.xN?esc(r.xN)+' <span style="color:var(--text-dim)">('+esc(r.xG)+')</span>':'\u2014')+xAlignBtn+'</td><td><span class="badge '+xbc+'">'+xbt+'</span></td></tr>'
+    +'<tr class="align-row" id="grpA-'+idx+'-w" style="display:none"><td colspan="9"><div class="align-block" id="grpAc-'+idx+'-w"></div></td></tr>'
+    +'<tr class="align-row" id="grpA-'+idx+'-b" style="display:none"><td colspan="9"><div class="align-block" id="grpAc-'+idx+'-b"></div></td></tr>';
+  }).join('');
+}
+
+function togGrpA(idx,mode,btn){
+  const row=document.getElementById('grpA-'+idx+'-'+mode),ct=document.getElementById('grpAc-'+idx+'-'+mode);
+  if(row.style.display!=='none'){row.style.display='none';btn.textContent='\u25B8';btn.classList.remove('open');return;}
+  const r=grpDetail[idx];if(!r)return;
+  const seqA=r.seq,seqB=mode==='w'?r.iNSeq:r.xNSeq;
+  const labA=r.label,labB=mode==='w'?r.iN:(r.xN+' ('+r.xG+')');
+  if(!seqB)return;
+  const{alignA,alignB}=nwAlign(seqA,seqB);
+  const sA=labA.length>8?labA.slice(0,7)+'\u2026':labA,sB=labB.length>8?labB.slice(0,7)+'\u2026':labB;
+  let sa='',mid='',sb='';
+  for(let i=0;i<alignA.length;i++){const a=alignA[i],b=alignB[i];if(a==='-'||b==='-'){sa+='<span class="nt-gap">'+a+'</span>';sb+='<span class="nt-gap">'+b+'</span>';mid+='<span class="mid-gap"> </span>';}else if(a===b){sa+='<span class="nt-match">'+a+'</span>';sb+='<span class="nt-match">'+b+'</span>';mid+='<span class="mid-match">|</span>';}else{sa+='<span class="nt-mis">'+a+'</span>';sb+='<span class="nt-mis">'+b+'</span>';mid+='<span class="mid-mis">\u00B7</span>';}}
+  ct.innerHTML='<span class="align-label">'+esc(sA)+'</span> '+sa+'\n<span class="align-label"></span> '+mid+'\n<span class="align-label">'+esc(sB)+'</span> '+sb;
+  row.style.display='';btn.textContent='\u25BE';btn.classList.add('open');
 }
 
 function exportGroupedCSV(){if(!grpDetail)return;const r=[['Group','Label','Sequence','IntraMinDist','IntraNearestLabel','InterMinDist','InterNearestLabel','InterNearestGroup']];for(const x of grpDetail)r.push([x.group,x.label,x.seq,x.iM!=null?x.iM:'',x.iN,x.xM!=null?x.xM:'',x.xN,x.xG]);downloadCSV(r,'grouped_sequence_distances.csv');}
